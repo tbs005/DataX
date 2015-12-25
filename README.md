@@ -12,18 +12,15 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 
 # DataX详细介绍
 
-请参考：
+##### 请参考：[DataX-Introduction](https://github.com/alibaba/DataX/wiki/DataX-Introduction)
 
-# System Requirements
 
-- Linux
-- [JDK(1.6以上，推荐1.6) ](http://www.oracle.com/technetwork/cn/java/javase/downloads/index.html) 
-- [Python(推荐Python2.6.X) ](https://www.python.org/downloads/)
-- [Apache Maven 3.x](https://maven.apache.org/download.cgi) (Compile DataX)
 
 # Quick Start
 
-请点击：[Quick Start](https://github.com/alibaba/DataX/wiki/Quick-Start)
+##### 请点击：[Quick Start](https://github.com/alibaba/DataX/wiki/Quick-Start)
+
+
 
 # Support Data Channels
 
