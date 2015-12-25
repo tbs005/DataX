@@ -1,0 +1,10 @@
+{
+    "name": "fakereader",
+    "class": "com.alibaba.datax.core.faker.FakeReader",
+    "description": {
+        "useScene": "only for performance test.",
+        "mechanism": "Produce Record from memory.",
+        "warn": "Never use it in your real job."
+    },
+    "developer": "someBody,bug reported to : someBody@someSite"
+}

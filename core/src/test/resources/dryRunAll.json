@@ -1,0 +1,157 @@
+
+{
+    "entry": {
+        "jvm": "-Xms1G -Xmx1G",
+        "environment": {
+            "PATH": "/home/admin",
+            "DATAX_HOME": "/home/admin"
+        }
+    },
+    "common": {
+        "column": {
+            "datetimeFormat": "yyyy-MM-dd HH:mm:ss",
+            "timeFormat": "HH:mm:ss",
+            "dateFormat": "yyyy-MM-dd",
+            "extraFormats":["yyyyMMdd"],
+            "timeZone": "GMT+8",
+            "encoding": "utf-8"
+        }
+    },
+    "core": {
+        "dataXServer": {
+            "address": "http://localhost/",
+            "timeout": 10000
+        },
+        "transport": {
+            "channel": {
+                "class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",
+                "speed": {
+                    "byte": 1048576,
+                    "record": 10000
+                },
+                "capacity": 32
+            },
+            "exchanger": {
+                "class": "com.alibaba.datax.core.plugin.BufferedRecordExchanger",
+                "bufferSize": 32
+            }
+        },
+        "container": {
+            "job": {
+                "reportInterval": 1000
+            },
+            "taskGroup": {
+                "channel": 3
+            }
+        },
+        "statistics": {
+            "collector": {
+                "plugin": {
+                    "taskClass": "com.alibaba.datax.core.statistics.plugin.task.StdoutPluginCollector",
+                    "maxDirtyNumber": 1000
+                }
+            }
+        }
+    },
+    "plugin": {
+        "reader": {
+            "mysqlreader": {
+                "name": "fakereader",
+                "class": "com.alibaba.datax.plugins.reader.fakereader.FakeReader",
+                "description": {
+                    "useScene": "only for performance test.",
+                    "mechanism": "Produce Record from memory.",
+                    "warn": "Never use it in your real job."
+                },
+                "developer": "someBody,bug reported to : someBody@someSite"
+            },
+            "oraclereader": {
+                "name": "oraclereader",
+                "class": "com.alibaba.datax.plugins.reader.oraclereader.OracleReader",
+                "description": {
+                    "useScene": "only for performance test.",
+                    "mechanism": "Produce Record from memory.",
+                    "warn": "Never use it in your real job."
+                },
+                "developer": "someBody,bug reported to : someBody@someSite"
+            },
+            "fakereader": {
+                "name": "fakereader",
+                "class": "com.alibaba.datax.core.faker.FakeReader",
+                "description": {
+                    "useScene": "only for performance test.",
+                    "mechanism": "Produce Record from memory.",
+                    "warn": "Never use it in your real job."
+                },
+                "developer": "someBody,bug reported to : someBody@someSite"
+            }
+        },
+        "writer": {
+            "fakewriter": {
+                "name": "fakewriter",
+                "class": "com.alibaba.datax.core.faker.FakeWriter",
+                "description": {
+                    "useScene": "only for performance test.",
+                    "mechanism": "Produce Record from memory.",
+                    "warn": "Never use it in your real job."
+                },
+                "developer": "someBody,bug reported to : someBody@someSite"
+            }
+        },
+        "transformer": {
+            "groovyTranformer": {}
+        }
+    },
+    "job": {
+        "setting": {
+            "dryRun": true,
+            "speed": {
+                "byte": 104857600
+            },
+            "errorLimit": {
+                "record": null,
+                "percentage": null
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "fakereader",
+                    "parameter": {
+                        "jdbcUrl": [
+                            [
+                                "jdbc:mysql://localhost:3305/db1",
+                                "jdbc:mysql://localhost:3306/db1"
+                            ],
+                            [
+                                "jdbc:mysql://localhost:3305/db2",
+                                "jdbc:mysql://localhost:3306/db2"
+                            ]
+                        ],
+                        "table": [
+                            "bazhen_[0-15]",
+                            "bazhen_[15-31]"
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "fakewriter",
+                    "parameter": {
+                        "column": [
+                            {
+                                "type": "string",
+                                "name": "id"
+                            },
+                            {
+                                "type": "int",
+                                "name": "age"
+                            }
+                        ],
+                        "encode": "utf-8",
+                        "hbase-conf": "/home/hbase/hbase-conf.xml"
+                    }
+                }
+            }
+        ]
+    }
+}
