@@ -30,14 +30,10 @@ MysqlReader插件实现了从Mysql读取数据。在底层实现上，MysqlReade
     "job": {
         "setting": {
             "speed": {
-            //设置传输速度，单位为byte/s，DataX运行会尽可能达到该速度但是不超过它.
-                 "byte": 1048576
-            }
-            //出错限制
-                "errorLimit": {
-                //出错的record条数上限，当大于该值即报错。
+                 "channel": 3
+            },
+            "errorLimit": {
                 "record": 0,
-                //出错的record百分比上限 1.0表示100%，0.02表示2%
                 "percentage": 0.02
             }
         },
@@ -46,15 +42,12 @@ MysqlReader插件实现了从Mysql读取数据。在底层实现上，MysqlReade
                 "reader": {
                     "name": "mysqlreader",
                     "parameter": {
-                        // 数据库连接用户名
                         "username": "root",
-                        // 数据库连接密码
                         "password": "root",
-                        "checkSlave":true,
                         "column": [
-                            "id"，"name"
+                            "id",
+                            "name"
                         ],
-                        //切分主键
                         "splitPk": "db_id",
                         "connection": [
                             {
@@ -69,11 +62,9 @@ MysqlReader插件实现了从Mysql读取数据。在底层实现上，MysqlReade
                     }
                 },
                "writer": {
-                    //writer类型
                     "name": "streamwriter",
-                    //是否打印内容
                     "parameter": {
-                        "print":true,
+                        "print":true
                     }
                 }
             }
