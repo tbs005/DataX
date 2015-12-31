@@ -38,3 +38,4 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 
 请及时提出issue给我们。请前往：[DataxIssue](https://github.com/alibaba/DataX/issues)
 
+邮箱：DataX-open-source@list.alibaba-inc.com
