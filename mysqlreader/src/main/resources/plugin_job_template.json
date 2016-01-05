@@ -6,7 +6,7 @@
         "column": [],
         "connection": [
             {
-            "jdbcUrl": "",
+            "jdbcUrl": [],
             "table": []
             }
         ],
