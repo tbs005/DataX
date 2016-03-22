@@ -12,11 +12,20 @@ import json
 from optparse import OptionParser
 from optparse import OptionGroup
 from string import Template
+import codecs
+import platform
+
+def isWindows():
+    return platform.system() == 'Windows'
 
 DATAX_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-DATAX_VERSION = 'UNKNOWN_DATAX_VERSION'
-CLASS_PATH = ("%s/lib/*:.") % (DATAX_HOME)
+DATAX_VERSION = 'DATAX-OPENSOURCE-1.0'
+if isWindows():
+    codecs.register(lambda name: name == 'cp65001' and codecs.lookup('utf-8') or None)
+    CLASS_PATH = ("%s/lib/*") % (DATAX_HOME)
+else:
+    CLASS_PATH = ("%s/lib/*:.") % (DATAX_HOME)
 LOGBACK_FILE = ("%s/conf/logback.xml") % (DATAX_HOME)
 DEFAULT_JVM = "-Xms1g -Xmx1g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/log" % (DATAX_HOME)
 DEFAULT_PROPERTY_CONF = "-Dfile.encoding=UTF-8 -Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener -Ddatax.home=%s -Dlogback.configurationFile=%s" % (
@@ -54,10 +63,11 @@ def suicide(signum, e):
 
 
 def register_signal():
-    global child_process
-    signal.signal(2, suicide)
-    signal.signal(3, suicide)
-    signal.signal(15, suicide)
+    if not isWindows():
+        global child_process
+        signal.signal(2, suicide)
+        signal.signal(3, suicide)
+        signal.signal(15, suicide)
 
 
 def getOptionParser():
