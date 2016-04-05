@@ -89,7 +89,7 @@ def getOptionParser():
                                   action="store", dest="params",
                                   help='Set job parameter, eg: the source tableName you want to set it by command, '
                                        'then you can use like this: -p"-DtableName=your-table-name", '
-									   'if you have mutiple parameters: -p"-DtableName=your-table-name -DcolumnName=your-column-name".'
+                                       'if you have mutiple parameters: -p"-DtableName=your-table-name -DcolumnName=your-column-name".'
                                        'Note: you should config in you job tableName with ${tableName}.')
     prodEnvOptionGroup.add_option("-r", "--reader", metavar="<parameter used in view job config[reader] template>",
                                   action="store", dest="reader",type="string",
