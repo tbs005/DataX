@@ -126,13 +126,13 @@ ODPSWriter插件用于实现往ODPS插入或者更新数据，主要提供给etl
 
 * **odpsServer**
 
-	* 描述：ODPS的server，线上地址为 http://service.odps.aliyun-inc.com/api 日常地址:http://service-corp.odps.aliyun-inc.com/api<br />
+	* 描述：ODPS的server地址，线上地址为 http://service.odps.aliyun-inc.com/api <br />
 	* 必选：是 <br />
 	* 默认值：无 <br />
 
 * **tunnelServer**
 
-	* 描述：ODPS的tunnelserver，线上地址为 http://dt.odps.aliyun-inc.com 日常地址:http://dt-corp.odps.aliyun-inc.com <br />
+	* 描述：ODPS的tunnelserver地址，线上地址为 http://dt.odps.aliyun-inc.com  <br />
 	* 必选：是，如果地址是对内的（含有"-inc")则可以不填 <br />
 	* 默认值：无 <br />
 
