@@ -130,6 +130,8 @@ public class WriterModelParser {
             return OTSOpType.PUT_ROW;
         } else if (value.equalsIgnoreCase(OTSConst.OTS_OP_TYPE_UPDATE)) {
             return OTSOpType.UPDATE_ROW;
+        } else if (value.equalsIgnoreCase(OTSConst.OTS_OP_TYPE_DELETE)) {
+            return OTSOpType.DELETE_ROW;
         } else {
             throw new IllegalArgumentException(String.format(OTSErrorMessage.OPERATION_PARSE_ERROR, value));
         }

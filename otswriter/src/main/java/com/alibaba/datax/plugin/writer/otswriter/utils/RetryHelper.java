@@ -22,7 +22,7 @@ public class RetryHelper {
     public static <V> V executeWithRetry(Callable<V> callable, int maxRetryTimes, int sleepInMilliSecond) throws Exception {
         int retryTimes = 0;
         while (true){
-            Thread.sleep(Common.getDelaySendMillinSeconds(retryTimes, sleepInMilliSecond));
+            Thread.sleep(Common.getDelaySendMilliseconds(retryTimes, sleepInMilliSecond));
             try {
                 return callable.call();
             } catch (Exception e) {

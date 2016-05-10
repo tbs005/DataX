@@ -6,13 +6,7 @@ import java.util.List;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
-import com.alibaba.datax.plugin.writer.otswriter.model.Pair;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSBatchWriterRowTask.LineAndError;
+import com.alibaba.datax.plugin.writer.otswriter.model.*;
 import com.aliyun.openservices.ots.ClientException;
 import com.aliyun.openservices.ots.OTSException;
 import com.aliyun.openservices.ots.model.ColumnValue;
@@ -21,6 +15,7 @@ import com.aliyun.openservices.ots.model.RowChange;
 import com.aliyun.openservices.ots.model.RowPrimaryKey;
 import com.aliyun.openservices.ots.model.RowPutChange;
 import com.aliyun.openservices.ots.model.RowUpdateChange;
+import org.apache.commons.math3.util.Pair;
 
 public class Common {
 
@@ -76,7 +71,7 @@ public class Common {
     public static RowChange columnValuesToRowChange(String tableName, OTSOpType type, RowPrimaryKey pk, List<Pair<String, ColumnValue>> values) {
         switch (type) {
             case PUT_ROW:
-                RowPutChange rowPutChange = new RowPutChange(tableName);
+                RowPutChangeWithRecord rowPutChange = new RowPutChangeWithRecord(tableName);
                 rowPutChange.setPrimaryKey(pk);
 
                 for (Pair<String, ColumnValue> en : values) {
@@ -87,7 +82,7 @@ public class Common {
 
                 return rowPutChange;
             case UPDATE_ROW:
-                RowUpdateChange rowUpdateChange = new RowUpdateChange(tableName);
+                RowUpdateChangeWithRecord rowUpdateChange = new RowUpdateChangeWithRecord(tableName);
                 rowUpdateChange.setPrimaryKey(pk);
 
                 for (Pair<String, ColumnValue> en : values) {
@@ -98,12 +93,16 @@ public class Common {
                     }
                 }
                 return rowUpdateChange;
+            case DELETE_ROW:
+                RowDeleteChangeWithRecord rowDeleteChange = new RowDeleteChangeWithRecord(tableName);
+                rowDeleteChange.setPrimaryKey(pk);
+                return rowDeleteChange;
             default:
                 throw new IllegalArgumentException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, type, "RowChange"));
         }
     }
 
-    public static long getDelaySendMillinSeconds(int hadRetryTimes, int initSleepInMilliSecond) {
+    public static long getDelaySendMilliseconds(int hadRetryTimes, int initSleepInMilliSecond) {
 
         if (hadRetryTimes <= 0) {
             return 0;
@@ -118,17 +117,5 @@ public class Common {
             } 
         }
         return sleepTime;
-    }
-
-    public static void collectDirtyRecord(TaskPluginCollector collector, List<LineAndError> errors) {
-        for (LineAndError re : errors) {
-            collector.collectDirtyRecord(re.getLine().getRecord(), re.getError().getMessage());
-        }
-    }
-
-    public static void collectDirtyRecord(TaskPluginCollector collector, List<OTSLine> lines, String errorMsg) {
-        for (OTSLine l : lines) {
-            collector.collectDirtyRecord(l.getRecord(), errorMsg);
-        }
     }
 }

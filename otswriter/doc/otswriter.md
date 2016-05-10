@@ -7,11 +7,13 @@ ___
 
 ## 1 快速介绍
 
-OTSWriter插件实现了向OTS写入数据，目前支持两种写入方式：
+OTSWriter插件实现了向OTS写入数据，目前支持三种写入方式：
 
 * PutRow，对应于OTS API PutRow，插入数据到指定的行，如果该行不存在，则新增一行；若该行存在，则覆盖原有行。
 
 * UpdateRow，对应于OTS API UpdateRow，更新指定行的数据，如果该行不存在，则新增一行；若该行存在，则根据请求的内容在这一行中新增、修改或者删除指定列的值。
+
+* DeleteRow，对应于OTS API DeleteRow，删除指定行的数据。
 
 OTS是构建在阿里云飞天分布式系统之上的 NoSQL数据库服务，提供海量结构化数据的存储和实时访问。OTS 以实例和表的形式组织数据，通过数据分片和负载均衡技术，实现规模上的无缝扩展。
 
@@ -75,6 +77,7 @@ OTS是构建在阿里云飞天分布式系统之上的 NoSQL数据库服务，�
                         // 写入OTS的方式
                         // PutRow : 等同于OTS API中PutRow操作，检查条件是ignore
                         // UpdateRow : 等同于OTS API中UpdateRow操作，检查条件是ignore
+                        // DeleteRow: 等同于OTS API中DeleteRow操作，检查条件是ignore
                         "writeMode" : "PutRow"
                     }
                 }
@@ -171,6 +174,8 @@ OTS是构建在阿里云飞天分布式系统之上的 NoSQL数据库服务，�
 		* PutRow，对应于OTS API PutRow，插入数据到指定的行，如果该行不存在，则新增一行；若该行存在，则覆盖原有行。
 
 		* UpdateRow，对应于OTS API UpdateRow，更新指定行的数据，如果该行不存在，则新增一行；若该行存在，则根据请求的内容在这一行中新增、修改或者删除指定列的值。
+
+		* DeleteRow，对应于OTS API DeleteRow，删除指定行的数据。
 
 	* 必选：是 <br />
 
