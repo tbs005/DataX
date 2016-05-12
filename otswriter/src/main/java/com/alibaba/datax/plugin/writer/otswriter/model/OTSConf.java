@@ -3,30 +3,30 @@ package com.alibaba.datax.plugin.writer.otswriter.model;
 import java.util.List;
 
 public class OTSConf {
-    private String endpoint= null;
-    private String accessId = null;
-    private String accessKey = null;
-    private String instanceName = null;
-    private String tableName = null;
+    private String endpoint;
+    private String accessId;
+    private String accessKey;
+    private String instanceName;
+    private String tableName;
    
-    private List<OTSPKColumn> primaryKeyColumn = null;
-    private List<OTSAttrColumn> attributeColumn = null;
-   
-    private int retry =  -1;
-    private int sleepInMilliSecond = -1;
-    private int batchWriteCount = -1;
-    private int concurrencyWrite = -1;
-    private int ioThreadCount = -1;
-    private int socketTimeout = -1;
-    private int connectTimeout = -1;
+    private List<OTSPKColumn> primaryKeyColumn;
+    private List<OTSAttrColumn> attributeColumn;
+
+    private int bufferSize = 1024;
+    private int retry =  18;
+    private int sleepInMillisecond = 100;
+    private int batchWriteCount = 10;
+    private int concurrencyWrite = 5;
+    private int ioThreadCount = 1;
+    private int socketTimeout = 20000;
+    private int connectTimeout = 10000;
     
-    private OTSOpType operation = null;
-    
-    private RestrictConf restrictConf = null;
+    private OTSOpType operation;
+    private RestrictConf restrictConf;
     
     //限制项
     public class RestrictConf {
-        private int requestTotalSizeLimition = -1;
+        private int requestTotalSizeLimition = 1024 * 1024;
         
         public int getRequestTotalSizeLimition() {
             return requestTotalSizeLimition;
@@ -109,11 +109,11 @@ public class OTSConf {
     public void setRetry(int retry) {
         this.retry = retry;
     }
-    public int getSleepInMilliSecond() {
-        return sleepInMilliSecond;
+    public int getSleepInMillisecond() {
+        return sleepInMillisecond;
     }
-    public void setSleepInMilliSecond(int sleepInMilliSecond) {
-        this.sleepInMilliSecond = sleepInMilliSecond;
+    public void setSleepInMillisecond(int sleepInMillisecond) {
+        this.sleepInMillisecond = sleepInMillisecond;
     }
     public int getIoThreadCount() {
         return ioThreadCount;
@@ -130,6 +130,15 @@ public class OTSConf {
     public int getConnectTimeout() {
         return connectTimeout;
     }
+
+    public int getBufferSize() {
+        return bufferSize;
+    }
+
+    public void setBufferSize(int bufferSize) {
+        this.bufferSize = bufferSize;
+    }
+
     public void setConnectTimeout(int connectTimeout) {
         this.connectTimeout = connectTimeout;
     }

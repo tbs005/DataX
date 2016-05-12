@@ -16,17 +16,18 @@ public class OTSConst {
     
     public final static String OTS_OP_TYPE_PUT = "PutRow";
     public final static String OTS_OP_TYPE_UPDATE = "UpdateRow";
-    
+    public final static String OTS_OP_TYPE_DELETE = "DeleteRow";
+
     // options
     public final static String RETRY = "maxRetryTime";
-    public final static String SLEEP_IN_MILLI_SECOND = "retrySleepInMillionSecond";
+    public final static String SLEEP_IN_MILLISECOND = "retrySleepInMillisecond";
     public final static String BATCH_WRITE_COUNT = "batchWriteCount";
     public final static String CONCURRENCY_WRITE = "concurrencyWrite";
     public final static String IO_THREAD_COUNT = "ioThreadCount";
-    public final static String MAX_CONNECT_COUNT = "maxConnectCount";
-    public final static String SOCKET_TIMEOUT = "socketTimeoutInMillionSecond";
-    public final static String CONNECT_TIMEOUT = "connectTimeoutInMillionSecond";
+    public final static String SOCKET_TIMEOUT = "socketTimeoutInMillisecond";
+    public final static String CONNECT_TIMEOUT = "connectTimeoutInMillisecond";
+    public final static String BUFFER_SIZE = "bufferSize";
     
     // 限制项
-    public final static String REQUEST_TOTAL_SIZE_LIMITION = "requestTotalSizeLimition";
+    public final static String REQUEST_TOTAL_SIZE_LIMITATION = "requestTotalSizeLimitation";
 }

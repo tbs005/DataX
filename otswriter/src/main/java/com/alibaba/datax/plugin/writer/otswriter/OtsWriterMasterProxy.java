@@ -37,15 +37,16 @@ public class OtsWriterMasterProxy {
         
         // 默认参数
         conf.setRetry(param.getInt(OTSConst.RETRY, 18));
-        conf.setSleepInMilliSecond(param.getInt(OTSConst.SLEEP_IN_MILLI_SECOND, 100));
+        conf.setSleepInMillisecond(param.getInt(OTSConst.SLEEP_IN_MILLISECOND, 100));
         conf.setBatchWriteCount(param.getInt(OTSConst.BATCH_WRITE_COUNT, 100));
         conf.setConcurrencyWrite(param.getInt(OTSConst.CONCURRENCY_WRITE, 5));
         conf.setIoThreadCount(param.getInt(OTSConst.IO_THREAD_COUNT, 1));
-        conf.setSocketTimeout(param.getInt(OTSConst.SOCKET_TIMEOUT, 60000));
-        conf.setConnectTimeout(param.getInt(OTSConst.CONNECT_TIMEOUT, 60000));
+        conf.setSocketTimeout(param.getInt(OTSConst.SOCKET_TIMEOUT, 20000));
+        conf.setConnectTimeout(param.getInt(OTSConst.CONNECT_TIMEOUT, 10000));
+        conf.setBufferSize(param.getInt(OTSConst.BUFFER_SIZE, 1024));
         
         RestrictConf restrictConf = conf.new RestrictConf();
-        restrictConf.setRequestTotalSizeLimition(param.getInt(OTSConst.REQUEST_TOTAL_SIZE_LIMITION, 1024*1024));
+        restrictConf.setRequestTotalSizeLimition(param.getInt(OTSConst.REQUEST_TOTAL_SIZE_LIMITATION, 1024*1024));
         conf.setRestrictConf(restrictConf);
 
         // 必选参数
@@ -69,7 +70,7 @@ public class OtsWriterMasterProxy {
         conf.setPrimaryKeyColumn(WriterModelParser.parseOTSPKColumnList(ParamChecker.checkListAndGet(param, Key.PRIMARY_KEY, true)));
         ParamChecker.checkPrimaryKey(meta, conf.getPrimaryKeyColumn());
         
-        conf.setAttributeColumn(WriterModelParser.parseOTSAttrColumnList(ParamChecker.checkListAndGet(param, Key.COLUMN, conf.getOperation() == OTSOpType.PUT_ROW ? false : true)));
+        conf.setAttributeColumn(WriterModelParser.parseOTSAttrColumnList(ParamChecker.checkListAndGet(param, Key.COLUMN, conf.getOperation() == OTSOpType.UPDATE_ROW ? true : false)));
         ParamChecker.checkAttribute(conf.getAttributeColumn());
     }
     
@@ -100,7 +101,7 @@ public class OtsWriterMasterProxy {
         return RetryHelper.executeWithRetry(
                 new GetTableMetaCallable(ots, tableName),
                 conf.getRetry(),
-                conf.getSleepInMilliSecond()
+                conf.getSleepInMillisecond()
                 );
     }
 }

@@ -2,7 +2,7 @@ package com.alibaba.datax.plugin.writer.otswriter.model;
 
 public class OTSErrorMessage {
     
-    public static final String OPERATION_PARSE_ERROR = "The 'writeMode' only support 'PutRow' and 'UpdateRow' not '%s'.";
+    public static final String OPERATION_PARSE_ERROR = "The 'writeMode' only support 'PutRow', 'UpdateRow' or 'DeleteRow', not '%s'.";
     
     public static final String UNSUPPORT_PARSE = "Unsupport parse '%s' to '%s'.";
     
