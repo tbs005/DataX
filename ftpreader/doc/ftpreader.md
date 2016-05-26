@@ -53,7 +53,7 @@ FtpReader实现了从远程FTP文件读取数据并转为DataX协议的功能，
                     "name": "ftpReader",
                     "parameter": {
                         "protocol": "sftp",
-                        "host": "10.101.86.94",
+                        "host": "127.0.0.1",
                         "port": 22,
                         "username": "xx",
                         "password": "xxx",
