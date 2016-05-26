@@ -8,8 +8,6 @@
 HdfsWriter提供向HDFS文件系统指定路径中写入TEXTFile文件和ORCFile文件,文件内容可与hive中表关联。
 
 
-有关Hive的资料，可以参看http://baike.corp.taobao.com/index.php/Hive%E5%9F%BA%E7%A1%80%E6%96%87%E6%A1%A3
-
 ## 2 功能与限制
 
 * (1)、目前HdfsWriter仅支持textfile和orcfile两种格式的文件，且文件内容存放的必须是一张逻辑意义上的二维表;
@@ -103,10 +101,10 @@ HdfsWriter提供向HDFS文件系统指定路径中写入TEXTFile文件和ORCFile
                 "writer": {
                     "name": "hdfswriter",
                     "parameter": {
-                        "defaultFS": "hdfs://10.101.204.12:9000",
+                        "defaultFS": "hdfs://xxx:port",
                         "fileType": "orc",
                         "path": "/user/hive/warehouse/writerorc.db/orcfull",
-                        "fileName": "qiran",
+                        "fileName": "xxxx",
                         "column": [
                             {
                                 "name": "col1",
@@ -172,7 +170,7 @@ HdfsWriter提供向HDFS文件系统指定路径中写入TEXTFile文件和ORCFile
 
 * **defaultFS**
 
-	* 描述：Hadoop hdfs文件系统namenode节点地址。格式：hdfs://ip:端口；例如：hdfs://10.101.204.12:9000<br />
+	* 描述：Hadoop hdfs文件系统namenode节点地址。格式：hdfs://ip:端口；例如：hdfs://127.0.0.1:9000<br />
 
 
 		**特别需要注意的是，目前HdfsWriter不支持Kerberos等认证，所以用户需要保证DATAX有权限访问该节点**
