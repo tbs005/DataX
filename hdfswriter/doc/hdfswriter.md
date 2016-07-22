@@ -155,7 +155,7 @@ HdfsWriter提供向HDFS文件系统指定路径中写入TEXTFile文件和ORCFile
                                 "type": "TIMESTAMP"
                             }
                         ],
-                        "writeMode": "truncate",
+                        "writeMode": "append",
                         "fieldDelimiter": "\t",
                         "compress":"NONE"
                     }
