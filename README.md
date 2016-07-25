@@ -40,4 +40,7 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 
 邮箱：DataX-open-source@list.alibaba-inc.com
 
-官方旺旺群：1585662022
+官方阿里旺旺群：1585662022
+
+钉钉用户请扫描以下二维码进行讨论：
+![DataX-OpenSource-Dingding](https://github.com/alibaba/DataX/blob/master/images/datax-opensource-dingding.png)
