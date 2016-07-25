@@ -47,5 +47,4 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 
 官方阿里旺旺群：1585662022
 
-钉钉用户请扫描以下二维码进行讨论：
-![DataX-OpenSource-Dingding](https://github.com/alibaba/DataX/blob/master/images/datax-opensource-dingding.png)
+钉钉用户请扫描以下二维码进行讨论，请点击：[DataX开源用户交流群钉钉二维码](https://github.com/alibaba/DataX/blob/master/images/datax-opensource-dingding.png)
