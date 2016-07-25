@@ -71,7 +71,7 @@ public class RecordExchangerTest extends CaseInitializer {
 
 		int capacity = 10;
 		Record record = null;
-		RecordExchanger recordExchanger = new RecordExchanger(channel);
+		RecordExchanger recordExchanger = new RecordExchanger(1,0,channel,new Communication(), null, null);
 
 		for (int i = 0; i < capacity; i++) {
 			record = RecordProducer.produceRecord();

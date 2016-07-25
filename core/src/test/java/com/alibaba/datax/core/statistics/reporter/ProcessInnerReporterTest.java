@@ -1,10 +1,10 @@
 package com.alibaba.datax.core.statistics.reporter;
 
-import com.alibaba.datax.core.job.meta.State;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.core.statistics.container.report.ProcessInnerReporter;
 import com.alibaba.datax.core.util.ReflectUtil;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.junit.Assert;
 import org.junit.Test;
 

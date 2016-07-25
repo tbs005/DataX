@@ -2,9 +2,6 @@ package com.alibaba.datax.plugin.writer.mongodbwriter;
 
 import com.alibaba.datax.common.spi.ErrorCode;
 
-/**
- * Created by jianying.wcj on 2015/3/17 0017.
- */
 public enum MongoDBWriterErrorCode implements ErrorCode {
 
     ILLEGAL_VALUE("ILLEGAL_PARAMETER_VALUE","参数不合法"),

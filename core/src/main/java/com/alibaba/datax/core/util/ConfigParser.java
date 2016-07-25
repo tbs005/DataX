@@ -3,7 +3,6 @@ package com.alibaba.datax.core.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.container.CoreConstant;
-import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.methods.HttpGet;
@@ -34,8 +33,25 @@ public final class ConfigParser {
                 CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
         String writerPluginName = configuration.getString(
                 CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);
+
+        String preHandlerName = configuration.getString(
+                CoreConstant.DATAX_JOB_PREHANDLER_PLUGINNAME);
+
+        String postHandlerName = configuration.getString(
+                CoreConstant.DATAX_JOB_POSTHANDLER_PLUGINNAME);
+
+        Set<String> pluginList = new HashSet<String>();
+        pluginList.add(readerPluginName);
+        pluginList.add(writerPluginName);
+
+        if(StringUtils.isNotEmpty(preHandlerName)) {
+            pluginList.add(preHandlerName);
+        }
+        if(StringUtils.isNotEmpty(postHandlerName)) {
+            pluginList.add(postHandlerName);
+        }
         try {
-            configuration.merge(parsePluginConfig(Lists.newArrayList(readerPluginName, writerPluginName)), false);
+            configuration.merge(parsePluginConfig(new ArrayList<String>(pluginList)), false);
         }catch (Exception e){
             //吞掉异常，保持log干净。这里message足够。
             LOG.warn(String.format("插件[%s,%s]加载失败，1s后重试... Exception:%s ", readerPluginName, writerPluginName, e.getMessage()));
@@ -44,7 +60,7 @@ public final class ConfigParser {
             } catch (InterruptedException e1) {
                 //
             }
-            configuration.merge(parsePluginConfig(Lists.newArrayList(readerPluginName, writerPluginName)), false);
+            configuration.merge(parsePluginConfig(new ArrayList<String>(pluginList)), false);
         }
 
         return configuration;
@@ -80,7 +96,7 @@ public final class ConfigParser {
                 HttpGet httpGet = HttpClientUtil.getGetRequest();
                 httpGet.setURI(url.toURI());
 
-                jobContent = httpClientUtil.executeAndGetWithFailedRetry(httpGet, 6, 1000l);
+                jobContent = httpClientUtil.executeAndGetWithFailedRetry(httpGet, 1, 1000l);
             } catch (Exception e) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource, e);
             }
@@ -99,7 +115,7 @@ public final class ConfigParser {
         return jobContent;
     }
 
-    private static Configuration parsePluginConfig(List<String> wantPluginNames) {
+    public static Configuration parsePluginConfig(List<String> wantPluginNames) {
         Configuration configuration = Configuration.newDefault();
 
         Set<String> replicaCheckPluginSet = new HashSet<String>();

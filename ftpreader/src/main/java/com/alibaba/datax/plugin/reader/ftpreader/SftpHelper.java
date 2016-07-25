@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.plugin.reader.ftpreader.FtpReader.Job;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
@@ -21,7 +20,7 @@ import com.jcraft.jsch.SftpException;
 import com.jcraft.jsch.ChannelSftp.LsEntry;
 
 public class SftpHelper extends FtpHelper {
-	private static final Logger LOG = LoggerFactory.getLogger(Job.class);
+	private static final Logger LOG = LoggerFactory.getLogger(SftpHelper.class);
 
 	Session session = null;
 	ChannelSftp channelSftp = null;

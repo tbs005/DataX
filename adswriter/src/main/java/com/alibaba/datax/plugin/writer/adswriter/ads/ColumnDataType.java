@@ -113,68 +113,68 @@ public class ColumnDataType {
         }
     }
 
-//    /**
-//     * Get the list of ads data types.
-//     *
-//     * @return the ads data types
-//     */
-//    public static ArrayList<ColumnDataType> getTypes() {
-//        return TYPES;
-//    }
+    /**
+     * Get the list of data types.
+     * 
+     * @return the list
+     */
+    public static ArrayList<ColumnDataType> getTypes() {
+        return TYPES;
+    }
 
-//    /**
-//     * Get the name of the Java class for the given value type.
-//     *
-//     * @param type the value type
-//     * @return the class name
-//     */
-//    public static String getTypeClassName(int type) {
-//        switch (type) {
-//            case BOOLEAN:
-//                // "java.lang.Boolean";
-//                return Boolean.class.getName();
-//            case BYTE:
-//                // "java.lang.Byte";
-//                return Byte.class.getName();
-//            case SHORT:
-//                // "java.lang.Short";
-//                return Short.class.getName();
-//            case INT:
-//                // "java.lang.Integer";
-//                return Integer.class.getName();
-//            case LONG:
-//                // "java.lang.Long";
-//                return Long.class.getName();
-//            case DECIMAL:
-//                // "java.math.BigDecimal";
-//                return BigDecimal.class.getName();
-//            case TIME:
-//                // "java.sql.Time";
-//                return Time.class.getName();
-//            case DATE:
-//                // "java.sql.Date";
-//                return Date.class.getName();
-//            case TIMESTAMP:
-//                // "java.sql.Timestamp";
-//                return Timestamp.class.getName();
-//            case STRING:
-//                // case STRING_IGNORECASE:
-//                // case STRING_FIXED:
-//            case MULTI_VALUE:
-//                // "java.lang.String";
-//                return String.class.getName();
-//            case DOUBLE:
-//                // "java.lang.Double";
-//                return Double.class.getName();
-//            case FLOAT:
-//                // "java.lang.Float";
-//                return Float.class.getName();
-//                // case NULL:
-//                // return null;
-//            default:
-//                throw new IllegalArgumentException("type=" + type);
-//        }
-//    }
+    /**
+     * Get the name of the Java class for the given value type.
+     * 
+     * @param type the value type
+     * @return the class name
+     */
+    public static String getTypeClassName(int type) {
+        switch (type) {
+            case BOOLEAN:
+                // "java.lang.Boolean";
+                return Boolean.class.getName();
+            case BYTE:
+                // "java.lang.Byte";
+                return Byte.class.getName();
+            case SHORT:
+                // "java.lang.Short";
+                return Short.class.getName();
+            case INT:
+                // "java.lang.Integer";
+                return Integer.class.getName();
+            case LONG:
+                // "java.lang.Long";
+                return Long.class.getName();
+            case DECIMAL:
+                // "java.math.BigDecimal";
+                return BigDecimal.class.getName();
+            case TIME:
+                // "java.sql.Time";
+                return Time.class.getName();
+            case DATE:
+                // "java.sql.Date";
+                return Date.class.getName();
+            case TIMESTAMP:
+                // "java.sql.Timestamp";
+                return Timestamp.class.getName();
+            case STRING:
+                // case STRING_IGNORECASE:
+                // case STRING_FIXED:
+            case MULTI_VALUE:
+                // "java.lang.String";
+                return String.class.getName();
+            case DOUBLE:
+                // "java.lang.Double";
+                return Double.class.getName();
+            case FLOAT:
+                // "java.lang.Float";
+                return Float.class.getName();
+                // case NULL:
+                // return null;
+            default:
+                throw new IllegalArgumentException("type=" + type);
+        }
+    }
 
     /**
      * Get the data type object for the given value type.
@@ -298,39 +298,31 @@ public class ColumnDataType {
     }
 
     /**
-     * ads getNonPrimitiveClass
-     * @param clazz
-     * @return
+     * Convert primitive class names to java.lang.* class names.
+     * 
+     * @param clazz the class (for example: int)
+     * @return the non-primitive class (for example: java.lang.Integer)
      */
     public static Class<?> getNonPrimitiveClass(Class<?> clazz) {
         if (!clazz.isPrimitive()) {
             return clazz;
         } else if (clazz == boolean.class) {
-            // ads return "java.lang.Boolean";
             return Boolean.class;
-        } else if (clazz == char.class) {
-            // ads return "java.lang.Character";
-            return Character.class;
         } else if (clazz == byte.class) {
-            // ads return "java.lang.Byte";
             return Byte.class;
+        } else if (clazz == char.class) {
+            return Character.class;
         } else if (clazz == double.class) {
-            // ads return "java.lang.Double";
             return Double.class;
         } else if (clazz == float.class) {
-            // ads return "java.lang.Float";
             return Float.class;
         } else if (clazz == int.class) {
-            // ads return "java.lang.Integer";
             return Integer.class;
-        } else if (clazz == short.class) {
-            // ads return "java.lang.Short";
-            return Short.class;
         } else if (clazz == long.class) {
-            // ads return "java.lang.Long";
             return Long.class;
+        } else if (clazz == short.class) {
+            return Short.class;
         } else if (clazz == void.class) {
-            // ads return "java.lang.Void";
             return Void.class;
         }
         return clazz;

@@ -2,9 +2,6 @@ package com.alibaba.datax.plugin.writer.ocswriter.utils;
 
 import com.alibaba.datax.common.spi.ErrorCode;
 
-/**
- * Time:    2015-05-22 16:45
- */
 public enum OcsWriterErrorCode implements ErrorCode {
     REQUIRED_VALUE("OcsWriterErrorCode-000", "参数不能为空"),
     ILLEGAL_PARAM_VALUE("OcsWriterErrorCode-001", "参数不合法"),

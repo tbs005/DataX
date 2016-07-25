@@ -1,7 +1,6 @@
 package com.alibaba.datax.common.util;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.io.ByteStreams;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +24,7 @@ public class HostUtils {
             ip = addr.getHostAddress();
             hostname = addr.getHostName();
         } catch (UnknownHostException e) {
-            log.error("Can't find out address: " + e.getMessage(), e);
+            log.error("Can't find out address: " + e.getMessage());
             ip = "UNKNOWN";
             hostname = "UNKNOWN";
         }
@@ -33,11 +32,11 @@ public class HostUtils {
             try {
                 Process process = Runtime.getRuntime().exec("hostname -i");
                 if (process.waitFor() == 0) {
-                    ip = new String(ByteStreams.toByteArray(process.getInputStream()), "UTF8");
+                    ip = new String(IOUtils.toByteArray(process.getInputStream()), "UTF8");
                 }
                 process = Runtime.getRuntime().exec("hostname");
                 if (process.waitFor() == 0) {
-                    hostname = CharMatcher.BREAKING_WHITESPACE.trimFrom(new String(ByteStreams.toByteArray(process.getInputStream()), "UTF8"));
+                    hostname = (new String(IOUtils.toByteArray(process.getInputStream()), "UTF8")).trim();
                 }
             } catch (Exception e) {
                 log.warn("get hostname failed {}", e.getMessage());

@@ -6,13 +6,13 @@ import com.alibaba.datax.plugin.reader.mongodbreader.KeyConstant;
 import com.alibaba.datax.plugin.reader.mongodbreader.MongoDBReaderErrorCode;
 import com.google.common.base.Strings;
 import com.mongodb.*;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.BsonDocument;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by jianying.wcj on 2015/3/19 0019.
- */
 public class CollectionSplitUtil {
 
     public static List<Configuration> doSplit(
@@ -29,10 +29,12 @@ public class CollectionSplitUtil {
                     MongoDBReaderErrorCode.ILLEGAL_VALUE.getDescription());
         }
 
-        DB db = mongoClient.getDB(dbName);
-        DBCollection collection = db.getCollection(collectionName);
+        String query = originalSliceConfig.getString(KeyConstant.MONGO_QUERY);
 
-        List<Entry> countInterval = doSplitInterval(adviceNumber,collection);
+        MongoDatabase db = mongoClient.getDatabase(dbName);
+        MongoCollection collection = db.getCollection(collectionName);
+
+        List<Entry> countInterval = doSplitInterval(adviceNumber, collection, query);
         for(Entry interval : countInterval) {
             Configuration conf = originalSliceConfig.clone();
             conf.set(KeyConstant.SKIP_COUNT,interval.interval);
@@ -42,11 +44,16 @@ public class CollectionSplitUtil {
         return confList;
     }
 
-    private static List<Entry> doSplitInterval(int adviceNumber,DBCollection collection) {
+    private static List<Entry> doSplitInterval(int adviceNumber, MongoCollection collection, String query) {
 
         List<Entry> intervalCountList = new ArrayList<Entry>();
 
-        long totalCount = collection.count();
+        long totalCount = 0;
+        if (!Strings.isNullOrEmpty(query)) {
+            totalCount = collection.count(BsonDocument.parse(query));
+        } else {
+            totalCount = collection.count();
+        }
         if(totalCount < 0) {
             return intervalCountList;
         }

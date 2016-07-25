@@ -1,8 +1,6 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.job.meta.ExecuteMode;
-import com.alibaba.datax.core.job.meta.State;
 import com.alibaba.datax.core.job.scheduler.processinner.ProcessInnerScheduler;
 import com.alibaba.datax.core.job.scheduler.processinner.StandAloneScheduler;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
@@ -10,6 +8,8 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
 import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 import org.powermock.api.mockito.PowerMockito;

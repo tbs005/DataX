@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.writer.adswriter.ads;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,12 +26,21 @@ public class TableInfo {
     private String tableName;
     private List<ColumnInfo> columns;
     private String comments;
+    private String tableType;
+
+    private String updateType;
+    private String partitionType;
+    private String partitionColumn;
+    private int partitionCount;
+    private List<String> primaryKeyColumns;
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("TableInfo [tableSchema=").append(tableSchema).append(", tableName=").append(tableName)
-                .append(", columns=").append(columns).append(", comments=").append(comments).append("]");
+                .append(", columns=").append(columns).append(", comments=").append(comments).append(",updateType=").append(updateType)
+                .append(",partitionType=").append(partitionType).append(",partitionColumn=").append(partitionColumn).append(",partitionCount=").append(partitionCount)
+                .append(",primaryKeyColumns=").append(primaryKeyColumns).append("]");
         return builder.toString();
     }
 
@@ -53,6 +63,14 @@ public class TableInfo {
     public List<ColumnInfo> getColumns() {
         return columns;
     }
+    
+    public List<String> getColumnsNames() {
+        List<String> columnNames = new ArrayList<String>();
+        for (ColumnInfo column : this.getColumns()) {
+            columnNames.add(column.getName());
+        }
+        return columnNames;
+    }
 
     public void setColumns(List<ColumnInfo> columns) {
         this.columns = columns;
@@ -64,6 +82,54 @@ public class TableInfo {
 
     public void setComments(String comments) {
         this.comments = comments;
+    }
+    
+    public String getTableType() {
+        return tableType;
+    }
+
+    public void setTableType(String tableType) {
+        this.tableType = tableType;
+    }
+
+    public String getUpdateType() {
+        return updateType;
+    }
+
+    public void setUpdateType(String updateType) {
+        this.updateType = updateType;
+    }
+
+    public String getPartitionType() {
+        return partitionType;
+    }
+
+    public void setPartitionType(String partitionType) {
+        this.partitionType = partitionType;
+    }
+
+    public String getPartitionColumn() {
+        return partitionColumn;
+    }
+
+    public void setPartitionColumn(String partitionColumn) {
+        this.partitionColumn = partitionColumn;
+    }
+
+    public int getPartitionCount() {
+        return partitionCount;
+    }
+
+    public void setPartitionCount(int partitionCount) {
+        this.partitionCount = partitionCount;
+    }
+
+    public List<String> getPrimaryKeyColumns() {
+        return primaryKeyColumns;
+    }
+
+    public void setPrimaryKeyColumns(List<String> primaryKeyColumns) {
+        this.primaryKeyColumns = primaryKeyColumns;
     }
 
 }

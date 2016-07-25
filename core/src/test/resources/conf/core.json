@@ -17,6 +17,12 @@
         }
     },
     "core": {
+        "dataXServer": {
+            "address": "http://100.69.171.116:7001/dsc-core",
+            "timeout": 10000,
+            "reportDataxLog": false,
+            "reportPerfLog": false
+        },
         "channel": {
             "class": "com.alibaba.datax.core.MemoryChannel",
             "speed": 1000000,

@@ -244,4 +244,5 @@ public abstract class Channel {
         currentCommunication.increaseCounter(
                 CommunicationTool.WRITE_RECEIVED_BYTES, byteSize);
     }
+
 }

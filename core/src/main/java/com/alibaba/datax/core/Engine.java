@@ -48,7 +48,8 @@ public class Engine {
 
         boolean isJob = !("taskGroup".equalsIgnoreCase(allConf
                 .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
-
+        //JobContainer会在schedule后再行进行设置和调整值
+        int channelNumber =0;
         AbstractContainer container;
         long instanceId;
         int taskGroupId = -1;
@@ -64,11 +65,18 @@ public class Engine {
                     CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
             taskGroupId = allConf.getInt(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+            channelNumber = allConf.getInt(
+                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
         }
 
         //缺省打开perfTrace
         boolean traceEnable = allConf.getBool(CoreConstant.DATAX_CORE_CONTAINER_TRACE_ENABLE, true);
         boolean perfReportEnable = allConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_PERFLOG, true);
+
+        //standlone模式的datax shell任务不进行汇报
+        if(instanceId == -1){
+            perfReportEnable = false;
+        }
 
         int priority = 0;
         try {
@@ -80,10 +88,8 @@ public class Engine {
         Configuration jobInfoConfig = allConf.getConfiguration(CoreConstant.DATAX_JOB_JOBINFO);
         //初始化PerfTrace
         PerfTrace perfTrace = PerfTrace.getInstance(isJob, instanceId, taskGroupId, priority, traceEnable);
-        perfTrace.setJobInfo(jobInfoConfig);
-        perfTrace.setPerfReportEnalbe(perfReportEnable);
+        perfTrace.setJobInfo(jobInfoConfig,perfReportEnable,channelNumber);
         container.start();
-
 
     }
 

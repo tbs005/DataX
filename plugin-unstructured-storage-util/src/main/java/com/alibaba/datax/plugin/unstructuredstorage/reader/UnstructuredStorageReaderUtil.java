@@ -8,10 +8,11 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.text.SimpleDateFormat;
+import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Scanner;
+
 
 /*import org.anarres.lzo.LzoDecompressor1z_safe;
 import org.anarres.lzo.LzoInputStream;
@@ -48,6 +49,8 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.csvreader.CsvReader;
 
 public class UnstructuredStorageReaderUtil {
@@ -80,6 +83,15 @@ public class UnstructuredStorageReaderUtil {
 		}
 		return splitedResult;
 	}
+	
+    public static String[] splitBufferedReader(CsvReader csvReader)
+            throws IOException {
+        String[] splitedResult = null;
+        if (csvReader.readRecord()) {
+            splitedResult = csvReader.getValues();
+        }
+        return splitedResult;
+    }
 
 	/**
 	 * 不支持转义
@@ -116,12 +128,15 @@ public class UnstructuredStorageReaderUtil {
 			column = null;
 		}
 
-		BufferedReader reader = null;
+        BufferedReader reader = null;
+        int bufferSize = readerSliceConfig.getInt(Key.BUFFER_SIZE,
+                Constant.DEFAULT_BUFFER_SIZE);
+        
 		// compress logic
 		try {
 			if (null == compress) {
-				reader = new BufferedReader(new InputStreamReader(inputStream,
-						encoding));
+                reader = new BufferedReader(new InputStreamReader(inputStream,
+                        encoding), bufferSize);
 			} else {
 				// TODO compress
 				/*if ("lzo".equalsIgnoreCase(compress)) {
@@ -137,13 +152,13 @@ public class UnstructuredStorageReaderUtil {
 				} else */if ("gzip".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new GzipCompressorInputStream(
 							inputStream);
-					reader = new BufferedReader(new InputStreamReader(
-							compressorInputStream, encoding));
+                    reader = new BufferedReader(new InputStreamReader(
+                            compressorInputStream, encoding), bufferSize);
 				} else if ("bzip2".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new BZip2CompressorInputStream(
 							inputStream);
-					reader = new BufferedReader(new InputStreamReader(
-							compressorInputStream, encoding));
+                    reader = new BufferedReader(new InputStreamReader(
+                            compressorInputStream, encoding), bufferSize);
 				} /*else if ("lzma".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new LZMACompressorInputStream(
 							inputStream);
@@ -194,17 +209,18 @@ public class UnstructuredStorageReaderUtil {
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							tarArchiveInputStream, encoding));
-				} else if ("zip".equalsIgnoreCase(compress)) {
-					ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
-							inputStream);
-					reader = new BufferedReader(new InputStreamReader(
-							zipArchiveInputStream, encoding));
-				}*/ else {
+				}*/ 
+                else if ("zip".equalsIgnoreCase(compress)) {
+                    ZipCycleInputStream zipCycleInputStream = new ZipCycleInputStream(
+                            inputStream);
+                    reader = new BufferedReader(new InputStreamReader(
+                            zipCycleInputStream, encoding), bufferSize);
+                } else {
 					throw DataXException
 							.asDataXException(
 									UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
 									String.format(
-											"仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+											"仅支持 gzip, bzip2, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
 											compress));
 				}
 			}
@@ -236,8 +252,6 @@ public class UnstructuredStorageReaderUtil {
 	public static void doReadFromStream(BufferedReader reader, String context,
 			Configuration readerSliceConfig, RecordSender recordSender,
 			TaskPluginCollector taskPluginCollector) {
-		List<Configuration> column = readerSliceConfig
-				.getListConfiguration(Key.COLUMN);
 		String encoding = readerSliceConfig.getString(Key.ENCODING,
 				Constant.DEFAULT_ENCODING);
 		Character fieldDelimiter = null;
@@ -261,25 +275,30 @@ public class UnstructuredStorageReaderUtil {
 				Constant.DEFAULT_SKIP_HEADER);
 		// warn: no default value '\N'
 		String nullFormat = readerSliceConfig.getString(Key.NULL_FORMAT);
+		
+        // warn: Configuration -> List<ColumnEntry> for performance
+        // List<Configuration> column = readerSliceConfig
+        // .getListConfiguration(Key.COLUMN);
+        List<ColumnEntry> column = UnstructuredStorageReaderUtil
+                .getListColumnEntry(readerSliceConfig, Key.COLUMN);
+        CsvReader csvReader  = null;
+        
 		// every line logic
 		try {
-			String fetchLine = null;
 			// TODO lineDelimiter
-			if (skipHeader) {
-				fetchLine = reader.readLine();
-				LOG.info("Header line has been skiped.");
-			}
-			while ((fetchLine = reader.readLine()) != null) {
-				String[] splitedStrs = null;
-				if (null == fieldDelimiter) {
-					splitedStrs = new String[] { fetchLine };
-				} else {
-					splitedStrs = UnstructuredStorageReaderUtil.splitOneLine(
-							fetchLine, fieldDelimiter);
-				}
-				UnstructuredStorageReaderUtil.transportOneRecord(recordSender,
-						column, splitedStrs, nullFormat, taskPluginCollector);
-			}
+            if (skipHeader) {
+                String fetchLine = reader.readLine();
+                LOG.info(String.format("Header line %s has been skiped.",
+                        fetchLine));
+            }
+            csvReader = new CsvReader(reader);
+            csvReader.setDelimiter(fieldDelimiter);
+            String[] parseRows;
+            while ((parseRows = UnstructuredStorageReaderUtil
+                    .splitBufferedReader(csvReader)) != null) {
+                UnstructuredStorageReaderUtil.transportOneRecord(recordSender,
+                        column, parseRows, nullFormat, taskPluginCollector);
+            }
 		} catch (UnsupportedEncodingException uee) {
 			throw DataXException
 					.asDataXException(
@@ -298,16 +317,17 @@ public class UnstructuredStorageReaderUtil {
 					UnstructuredStorageReaderErrorCode.RUNTIME_EXCEPTION,
 					String.format("运行时异常 : %s", e.getMessage()), e);
 		} finally {
+		    csvReader.close();
 			IOUtils.closeQuietly(reader);
 		}
 	}
 
 	private static Record transportOneRecord(RecordSender recordSender,
-			List<Configuration> columnConfigs, String[] sourceLine,
+			List<ColumnEntry> columnConfigs, String[] sourceLine,
 			String nullFormat, TaskPluginCollector taskPluginCollector) {
 		Record record = recordSender.createRecord();
 		Column columnGenerated = null;
-
+		
 		// 创建都为String类型column的record
 		if (null == columnConfigs || columnConfigs.size() == 0) {
 			for (String columnValue : sourceLine) {
@@ -322,13 +342,10 @@ public class UnstructuredStorageReaderUtil {
 			recordSender.sendToWriter(record);
 		} else {
 			try {
-				for (Configuration columnConfig : columnConfigs) {
-					String columnType = columnConfig
-							.getNecessaryValue(
-									Key.TYPE,
-									UnstructuredStorageReaderErrorCode.CONFIG_INVALID_EXCEPTION);
-					Integer columnIndex = columnConfig.getInt(Key.INDEX);
-					String columnConst = columnConfig.getString(Key.VALUE);
+				for (ColumnEntry columnConfig : columnConfigs) {
+				    String columnType = columnConfig.getType();
+					Integer columnIndex = columnConfig.getIndex();
+					String columnConst = columnConfig.getValue();
 
 					String columnValue = null;
 
@@ -350,8 +367,8 @@ public class UnstructuredStorageReaderUtil {
 						if (columnIndex >= sourceLine.length) {
 							String message = String
 									.format("您尝试读取的列越界,源文件该行有 [%s] 列,您尝试读取第 [%s] 列, 数据详情[%s]",
-											sourceLine.length, columnIndex + 1,
-											sourceLine);
+                                            sourceLine.length, columnIndex + 1,
+                                            StringUtils.join(sourceLine, ","));
 							LOG.warn(message);
 							throw new IndexOutOfBoundsException(message);
 						}
@@ -403,15 +420,14 @@ public class UnstructuredStorageReaderUtil {
 								Date date = null;
 								columnGenerated = new DateColumn(date);
 							} else {
-								String formatString = columnConfig
-										.getString(Key.FORMAT);
+								String formatString = columnConfig.getFormat();
 								//if (null != formatString) {
 								if (StringUtils.isNotBlank(formatString)) {
-									// 用户自己配置的格式转换
-									SimpleDateFormat format = new SimpleDateFormat(
-											formatString);
-									columnGenerated = new DateColumn(
-											format.parse(columnValue));
+                                    // 用户自己配置的格式转换, 脏数据行为出现变化
+                                    DateFormat format = columnConfig
+                                            .getDateFormat();
+                                    columnGenerated = new DateColumn(
+                                            format.parse(columnValue));
 								} else {
 									// 框架尝试转换
 									columnGenerated = new DateColumn(
@@ -457,6 +473,20 @@ public class UnstructuredStorageReaderUtil {
 		return record;
 	}
 
+    public static List<ColumnEntry> getListColumnEntry(
+            Configuration configuration, final String path) {
+        List<JSONObject> lists = configuration.getList(path, JSONObject.class);
+        if (lists == null) {
+            return null;
+        }
+        List<ColumnEntry> result = new ArrayList<ColumnEntry>();
+        for (final JSONObject object : lists) {
+            result.add(JSON.parseObject(object.toJSONString(),
+                    ColumnEntry.class));
+        }
+        return result;
+    }
+
 	private enum Type {
 		STRING, LONG, BOOLEAN, DOUBLE, DATE, ;
 	}
@@ -466,10 +496,11 @@ public class UnstructuredStorageReaderUtil {
      * */
 	public static void validateParameter(Configuration readerConfiguration) {
 	
-		// encoding check
-		 String encoding = readerConfiguration.getUnnecessaryValue(
-					com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
-					com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING,null);
+        // encoding check
+        String encoding = readerConfiguration
+                .getString(
+                        com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
+                        com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING);
 		 try {
              encoding = encoding.trim();
              readerConfiguration.set(Key.ENCODING, encoding);
@@ -487,10 +518,10 @@ public class UnstructuredStorageReaderUtil {
 					.getUnnecessaryValue(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS,null,null);
 			if(compress != null){
 				compress = compress.toLowerCase().trim();
-				boolean compressTag = "gzip".equals(compress) || "bzip2".equals(compress);
+				boolean compressTag = "gzip".equals(compress) || "bzip2".equals(compress) || "zip".equals(compress);
 				if (!compressTag) {
 					throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-							String.format("仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]", compress));
+							String.format("仅支持 gzip, bzip2, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]", compress));
 				}
 			}		
 			readerConfiguration.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS, compress);
@@ -592,29 +623,5 @@ public class UnstructuredStorageReaderUtil {
 					String.format("配置项目path中：[%s]不合法，目前只支持在最后一级目录使用通配符*或者?", regexPath));
 		}
 		return parentPath;
-	}
-	
-	
-
-	public static void main(String args[]) {
-		while (true) {
-			@SuppressWarnings("resource")
-			Scanner sc = new Scanner(System.in);
-			String inputString = sc.nextLine();
-			String delemiter = sc.nextLine();
-			if (delemiter.length() == 0) {
-				break;
-			}
-			if (!inputString.equals("exit")) {
-				String[] result = UnstructuredStorageReaderUtil.splitOneLine(
-						inputString, delemiter.charAt(0));
-				for (String str : result) {
-					System.out.print(str + " ");
-				}
-				System.out.println();
-			} else {
-				break;
-			}
-		}
 	}
 }

@@ -13,9 +13,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Created by jianying.wcj on 2015/3/17 0017.
- */
 public class MongoUtil {
 
     public static MongoClient initMongoClient(Configuration conf) {
@@ -59,14 +56,13 @@ public class MongoUtil {
      * @return
      */
     private static boolean isHostPortPattern(List<Object> addressList) {
-        boolean isMatch = false;
         for(Object address : addressList) {
-            String regex = "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):([0-9]+)";
-            if(((String)address).matches(regex)) {
-                isMatch = true;
+            String regex = "(\\S+):([0-9]+)";
+            if(!((String)address).matches(regex)) {
+                return false;
             }
         }
-        return isMatch;
+        return true;
     }
     /**
      * 转换为mongo地址协议

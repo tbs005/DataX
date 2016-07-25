@@ -23,13 +23,6 @@
 			</includes>
 			<outputDirectory>plugin/writer/oraclewriter</outputDirectory>
 		</fileSet>
-		<fileSet>
-			<directory>src/main/lib</directory>
-			<includes>
-				<include>ojdbc6-11.2.0.3.jar</include>
-			</includes>
-			<outputDirectory>plugin/writer/oraclewriter/libs</outputDirectory>
-		</fileSet>
 	</fileSets>
 
 	<dependencySets>

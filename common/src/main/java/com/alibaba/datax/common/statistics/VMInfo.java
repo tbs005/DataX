@@ -1,6 +1,5 @@
 package com.alibaba.datax.common.statistics;
 
-import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +8,7 @@ import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -271,7 +271,7 @@ public class VMInfo {
     }
 
     private class ProcessGCStatus {
-        final Map<String, GCStatus> gcStatusMap = Maps.newHashMap();
+        final Map<String, GCStatus> gcStatusMap = new HashMap<String, GCStatus>();
 
         public String toString() {
             return "\tGC Names\t" + gcStatusMap.keySet() + "\n";
@@ -314,7 +314,7 @@ public class VMInfo {
     }
 
     private class ProcessMemoryStatus {
-        final Map<String, MemoryStatus> memoryStatusMap = Maps.newHashMap();
+        final Map<String, MemoryStatus> memoryStatusMap = new HashMap<String, MemoryStatus>();
 
         public String toString() {
             StringBuilder sb = new StringBuilder();

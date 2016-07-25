@@ -19,15 +19,15 @@
     },
     "core": {
         "dataXServer": {
-            "address": "http://localhost/",
+            "address": "http://10.189.198.14/",
             "timeout": 10000
         },
         "transport": {
             "channel": {
                 "class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",
                 "speed": {
-                    "byte": 1048576,
-                    "record": 10000
+                    "byte": -1,
+                    "record": -1
                 },
                 "capacity": 32
             },
@@ -96,6 +96,12 @@
                     "warn": "Never use it in your real job."
                 },
                 "developer": "someBody,bug reported to : someBody@someSite"
+            },
+            "hbasebulkwriter2_11x":{
+                "name": "hbasebulkwriter2_11x",
+                "class": "com.alibaba.datax.plugin.writer.hbasebulkwriter2_11x.HBaseBulkWriter2_11x",
+                "description": "适用于: 生产环境. hbaseBulkLoad For hbase1.1.x",
+                "developer": "hbase"
             }
         },
         "transformer": {
@@ -142,7 +148,7 @@
                     }
                 },
                 "writer": {
-                    "name": "fakewriter",
+                    "name": "hbasebulkwriter2_11x",
                     "parameter": {
                         "column": [
                             {
@@ -154,7 +160,8 @@
                                 "name": "age"
                             }
                         ],
-                        "encode": "utf-8"
+                        "encode": "utf-8",
+                        "hbase-conf": "/home/hbase/hbase-conf.xml"
                     }
                 }
             }

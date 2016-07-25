@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>com.alibaba.datax</groupId>
-            <artifactId>datax-common</artifactId>
+            <artifactId>datax-transformer</artifactId>
             <version>${datax-project-version}</version>
             <exclusions>
                 <exclusion>
@@ -63,6 +63,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>datax-service-face</artifactId>
+            <version>1.0.23-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -91,6 +97,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>2.1.9</version>
         </dependency>
     </dependencies>
 

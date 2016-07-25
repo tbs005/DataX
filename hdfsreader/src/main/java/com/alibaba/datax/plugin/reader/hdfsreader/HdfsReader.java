@@ -5,6 +5,7 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
+
 import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -36,7 +37,6 @@ public class HdfsReader extends Reader {
                 .getLogger(Job.class);
 
         private Configuration readerOriginConfig = null;
-        private String defaultFS = null;
         private String encoding = null;
         private HashSet<String> sourceFiles;
         private String specifiedFileType = null;
@@ -49,18 +49,14 @@ public class HdfsReader extends Reader {
             LOG.info("init() begin...");
             this.readerOriginConfig = super.getPluginJobConf();
             this.validate();
-            dfsUtil = new DFSUtil(defaultFS);
+            dfsUtil = new DFSUtil(this.readerOriginConfig);
             LOG.info("init() ok and end...");
 
         }
 
         private void validate(){
-            defaultFS = this.readerOriginConfig.getNecessaryValue(Key.DEFAULT_FS,
+            this.readerOriginConfig.getNecessaryValue(Key.DEFAULT_FS,
                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
-            if (StringUtils.isBlank(defaultFS)) {
-                throw DataXException.asDataXException(
-                        HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 defaultFS");
-            }
 
             // path check
             String pathInString = this.readerOriginConfig.getNecessaryValue(Key.PATH, HdfsReaderErrorCode.REQUIRED_VALUE);
@@ -90,7 +86,7 @@ public class HdfsReader extends Reader {
                         HdfsReaderErrorCode.FILE_TYPE_ERROR, message);
             }
 
-            encoding = this.readerOriginConfig.getString(Key.ENCODING, "UTF-8");
+            encoding = this.readerOriginConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING, "UTF-8");
 
             try {
                 Charsets.toCharset(encoding);
@@ -113,17 +109,17 @@ public class HdfsReader extends Reader {
 
             // 检测是column 是否为 ["*"] 若是则填为空
             List<Configuration> column = this.readerOriginConfig
-                    .getListConfiguration(Key.COLUMN);
+                    .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
             if (null != column
                     && 1 == column.size()
                     && ("\"*\"".equals(column.get(0).toString()) || "'*'"
                     .equals(column.get(0).toString()))) {
                 readerOriginConfig
-                        .set(Key.COLUMN, new ArrayList<String>());
+                        .set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN, new ArrayList<String>());
             } else {
                 // column: 1. index type 2.value type 3.when type is Data, may have format
                 List<Configuration> columns = this.readerOriginConfig
-                        .getListConfiguration(Key.COLUMN);
+                        .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
 
                 if (null == columns || columns.size() == 0) {
                     throw DataXException.asDataXException(
@@ -133,9 +129,9 @@ public class HdfsReader extends Reader {
 
                 if (null != columns && columns.size() != 0) {
                     for (Configuration eachColumnConf : columns) {
-                        eachColumnConf.getNecessaryValue(Key.TYPE, HdfsReaderErrorCode.REQUIRED_VALUE);
-                        Integer columnIndex = eachColumnConf.getInt(Key.INDEX);
-                        String columnValue = eachColumnConf.getString(Key.VALUE);
+                        eachColumnConf.getNecessaryValue(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.TYPE, HdfsReaderErrorCode.REQUIRED_VALUE);
+                        Integer columnIndex = eachColumnConf.getInt(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.INDEX);
+                        String columnValue = eachColumnConf.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.VALUE);
 
                         if (null == columnIndex && null == columnValue) {
                             throw DataXException.asDataXException(
@@ -156,14 +152,11 @@ public class HdfsReader extends Reader {
 
         @Override
         public void prepare() {
-
             LOG.info("prepare()");
             this.sourceFiles = dfsUtil.getAllFiles(path, specifiedFileType);
-            LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
-            LOG.info("待读取的所有文件绝对路径如下：");
-            for(String filePath :sourceFiles){
-                LOG.info(String.format("[%s]", filePath));
-            }
+            LOG.info(String.format("您即将读取的文件数为: [%s], 列表为: [%s]",
+                    this.sourceFiles.size(),
+                    StringUtils.join(this.sourceFiles, ",")));
         }
 
         @Override
@@ -179,7 +172,7 @@ public class HdfsReader extends Reader {
                         String.format("未能找到待读取的文件,请确认您的配置项path: %s", this.readerOriginConfig.getString(Key.PATH)));
             }
 
-            List<List<String>> splitedSourceFiles = this.splitSourceFiles(new ArrayList(this.sourceFiles), splitNumber);
+            List<List<String>> splitedSourceFiles = this.splitSourceFiles(new ArrayList<String>(this.sourceFiles), splitNumber);
             for (List<String> files : splitedSourceFiles) {
                 Configuration splitedConfig = this.readerOriginConfig.clone();
                 splitedConfig.set(Constant.SOURCE_FILES, files);
@@ -223,22 +216,22 @@ public class HdfsReader extends Reader {
         private static Logger LOG = LoggerFactory.getLogger(Reader.Task.class);
         private Configuration taskConfig;
         private List<String> sourceFiles;
-        private String defaultFS;
         private HdfsFileType fileType;
         private String specifiedFileType;
         private String encoding;
         private DFSUtil dfsUtil = null;
+        private int bufferSize;
 
         @Override
         public void init() {
 
             this.taskConfig = super.getPluginJobConf();
             this.sourceFiles = this.taskConfig.getList(Constant.SOURCE_FILES, String.class);
-            this.defaultFS = this.taskConfig.getNecessaryValue(Key.DEFAULT_FS,
-                    HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
             this.specifiedFileType = this.taskConfig.getNecessaryValue(Key.FILETYPE, HdfsReaderErrorCode.REQUIRED_VALUE);
-            this.encoding = this.taskConfig.getString(Key.ENCODING, "UTF-8");
-            this.dfsUtil = new DFSUtil(defaultFS);
+            this.encoding = this.taskConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING, "UTF-8");
+            this.dfsUtil = new DFSUtil(this.taskConfig);
+            this.bufferSize = this.taskConfig.getInt(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.BUFFER_SIZE,
+                    com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_BUFFER_SIZE);
         }
 
         @Override
@@ -257,7 +250,7 @@ public class HdfsReader extends Reader {
                 if((fileType.equals(HdfsFileType.TEXT) || fileType.equals(HdfsFileType.COMPRESSED_TEXT))
                         &&(this.specifiedFileType.equalsIgnoreCase(Constant.TEXT))) {
 
-                    BufferedReader bufferedReader = dfsUtil.getBufferedReader(sourceFile, fileType, encoding);
+                    BufferedReader bufferedReader = dfsUtil.getBufferedReader(sourceFile, fileType, encoding, this.bufferSize);
                     UnstructuredStorageReaderUtil.doReadFromStream(bufferedReader, sourceFile,
                             this.taskConfig, recordSender, this.getTaskPluginCollector());
                 }else if(fileType.equals(HdfsFileType.ORC)

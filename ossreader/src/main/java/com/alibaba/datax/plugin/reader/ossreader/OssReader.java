@@ -157,7 +157,7 @@ public class OssReader extends Reader {
                 }
             }
 
-            // only support compress: gzip,bzip2
+            // only support compress: gzip,bzip2,zip
             String compress = this.readerOriginConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS);
             if (StringUtils.isBlank(compress)) {
@@ -166,14 +166,14 @@ public class OssReader extends Reader {
                                 null);
             } else {
                 Set<String> supportedCompress = Sets
-                        .newHashSet("gzip", "bzip2");
+                        .newHashSet("gzip", "bzip2", "zip");
                 compress = compress.toLowerCase().trim();
                 if (!supportedCompress.contains(compress)) {
                     throw DataXException
                             .asDataXException(
                                     OssReaderErrorCode.ILLEGAL_VALUE,
                                     String.format(
-                                            "仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+                                            "仅支持 gzip, bzip2, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
                                             compress));
                 }
                 this.readerOriginConfig
@@ -204,7 +204,7 @@ public class OssReader extends Reader {
 
             // 将每个单独的 object 作为一个 slice
             List<String> objects = parseOriginObjects(readerOriginConfig
-                    .getList(Constants.OBJECT, String.class));
+                    .getList(Constant.OBJECT, String.class));
             if (0 == objects.size()) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.EMPTY_BUCKET_EXCEPTION,
@@ -216,8 +216,9 @@ public class OssReader extends Reader {
 
             for (String object : objects) {
                 Configuration splitedConfig = this.readerOriginConfig.clone();
-                splitedConfig.set(Constants.OBJECT, object);
+                splitedConfig.set(Constant.OBJECT, object);
                 readerSplitConfigs.add(splitedConfig);
+                LOG.info(String.format("OSS object to be read:%s", object));
             }
             LOG.debug("split() ok and end...");
             return readerSplitConfigs;

@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.statistics.communication;
 
-import com.alibaba.datax.core.job.meta.State;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

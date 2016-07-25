@@ -3,11 +3,11 @@ package com.alibaba.datax.core.statistics.container.communicator;
 
 import com.alibaba.datax.common.statistics.VMInfo;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.job.meta.State;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
 import com.alibaba.datax.core.statistics.container.report.AbstractReporter;
 import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 
 import java.util.List;
 import java.util.Map;

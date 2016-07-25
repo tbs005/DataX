@@ -1,9 +1,9 @@
 package com.alibaba.datax.core.taskgroup.runner;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.core.job.meta.State;
 import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 
 public class TaskGroupContainerRunner implements Runnable {
 

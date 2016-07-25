@@ -1,8 +1,5 @@
 package com.alibaba.datax.plugin.writer.ocswriter;
 
-/**
- * Time:    2015-05-06 19:54
- */
 public final class Key {
     public final static String USER = "username";
 

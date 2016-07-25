@@ -309,6 +309,7 @@ public class OdpsUtil {
                 if (OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION.equals(e.getErrorCode())) {
                     LOG.debug("Exception when calling callable", e);
                     if (i + 1 < retryTimes && sleepTimeInMilliSecond > 0) {
+                        LOG.warn(String.format("will do [%s] times retry, current exception=%s", i + 1, e.getMessage()));
                         long timeToSleep;
                         if (exponential) {
                             timeToSleep = sleepTimeInMilliSecond * (long) Math.pow(2, i);

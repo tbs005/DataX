@@ -19,7 +19,7 @@
     },
     "core": {
         "dataXServer": {
-            "address": "http://localhost/",
+            "address": "http://10.189.198.14/",
             "timeout": 10000
         },
         "transport": {

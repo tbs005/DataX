@@ -1,11 +1,15 @@
 package com.alibaba.datax.common.statistics;
 
+import com.alibaba.datax.common.statistics.PerfRecord.PHASE;
 import com.alibaba.datax.common.util.Configuration;
-import com.google.common.base.Optional;
+import com.alibaba.datax.common.util.HostUtils;
+import com.alibaba.datax.dataxservice.face.domain.JobStatisticsDto2;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -22,21 +26,26 @@ public class PerfTrace {
     private String perfTraceId;
     private volatile boolean enable;
     private volatile boolean isJob;
+    private long instId;
     private long jobId;
+    private long jobVersion;
+    private int taskGroupId;
+    private int channelNumber;
+
     private int priority;
     private int batchSize = 500;
-    private volatile boolean perfReportEnalbe = true;
+    private volatile boolean perfReportEnable = true;
 
     //jobid_jobversion,instanceid,taskid, src_mark, dst_mark,
     private Map<Integer, String> taskDetails = new ConcurrentHashMap<Integer, String>();
     //PHASE => PerfRecord
-    private ConcurrentHashMap<PerfRecord.PHASE, SumPerfRecord> perfRecordMaps = new ConcurrentHashMap<PerfRecord.PHASE, SumPerfRecord>();
+    private ConcurrentHashMap<PHASE, SumPerfRecord4Print> perfRecordMaps4print = new ConcurrentHashMap<PHASE, SumPerfRecord4Print>();
+    // job_phase => SumPerf4Report
+    private SumPerf4Report sumPerf4Report = new SumPerf4Report();
+    private SumPerf4Report sumPerf4Report4NotEnd;
     private Configuration jobInfo;
-    private final List<PerfRecord> startReportPool = new ArrayList<PerfRecord>();
-    private final List<PerfRecord> endReportPool = new ArrayList<PerfRecord>();
+    private final Set<PerfRecord> needReportPool4NotEnd = new HashSet<PerfRecord>();
     private final List<PerfRecord> totalEndReport = new ArrayList<PerfRecord>();
-    private final Set<PerfRecord> waitingReportSet = new HashSet<PerfRecord>();
-
 
     /**
      * 单实例
@@ -46,12 +55,12 @@ public class PerfTrace {
      * @param taskGroupId
      * @return
      */
-    public static PerfTrace getInstance(boolean isJob, long jobId, int taskGroupId,int priority, boolean enable) {
+    public static PerfTrace getInstance(boolean isJob, long jobId, int taskGroupId, int priority, boolean enable) {
 
         if (instance == null) {
             synchronized (lock) {
                 if (instance == null) {
-                    instance = new PerfTrace(isJob, jobId, taskGroupId,priority, enable);
+                    instance = new PerfTrace(isJob, jobId, taskGroupId, priority, enable);
                 }
             }
         }
@@ -76,13 +85,19 @@ public class PerfTrace {
     }
 
     private PerfTrace(boolean isJob, long jobId, int taskGroupId, int priority, boolean enable) {
-        this.perfTraceId = isJob ? "job_" + jobId : String.format("taskGroup_%s_%s", jobId, taskGroupId);
-        this.enable = enable;
-        this.isJob = isJob;
-        this.jobId = jobId;
-        this.priority = priority;
-        LOG.info(String.format("PerfTrace traceId=%s, isEnable=%s, priority=%s", this.perfTraceId, this.enable, this.priority));
+        try {
+            this.perfTraceId = isJob ? "job_" + jobId : String.format("taskGroup_%s_%s", jobId, taskGroupId);
+            this.enable = enable;
+            this.isJob = isJob;
+            this.taskGroupId = taskGroupId;
+            this.instId = jobId;
+            this.priority = priority;
+            LOG.info(String.format("PerfTrace traceId=%s, isEnable=%s, priority=%s", this.perfTraceId, this.enable, this.priority));
 
+        } catch (Exception e) {
+            // do nothing
+            this.enable = false;
+        }
     }
 
     public void addTaskDetails(int taskId, String detail) {
@@ -90,8 +105,8 @@ public class PerfTrace {
             String before = "";
             int index = detail.indexOf("?");
             String current = detail.substring(0, index == -1 ? detail.length() : index);
-            if(current.indexOf("[")>=0){
-                current+="]";
+            if (current.indexOf("[") >= 0) {
+                current += "]";
             }
             if (taskDetails.containsKey(taskId)) {
                 before = taskDetails.get(taskId).trim();
@@ -106,29 +121,59 @@ public class PerfTrace {
     }
 
     public void tracePerfRecord(PerfRecord perfRecord) {
-        if (enable) {
-            //ArrayList非线程安全
-            switch (perfRecord.getAction()) {
-                case start:
-                    synchronized (startReportPool) {
-                        startReportPool.add(perfRecord);
-                    }
-                    break;
-                case end:
-                    synchronized (endReportPool) {
-                        endReportPool.add(perfRecord);
-                    }
-                    break;
+        try {
+            if (enable) {
+                long curNanoTime = System.nanoTime();
+                //ArrayList非线程安全
+                switch (perfRecord.getAction()) {
+                    case end:
+                        synchronized (totalEndReport) {
+                            totalEndReport.add(perfRecord);
+
+                            if (totalEndReport.size() > batchSize * 10) {
+                                sumPerf4EndPrint(totalEndReport);
+                            }
+                        }
+
+                        if (perfReportEnable && needReport(perfRecord)) {
+                            synchronized (needReportPool4NotEnd) {
+                                sumPerf4Report.add(curNanoTime,perfRecord);
+                                needReportPool4NotEnd.remove(perfRecord);
+                            }
+                        }
+
+                        break;
+                    case start:
+                        if (perfReportEnable && needReport(perfRecord)) {
+                            synchronized (needReportPool4NotEnd) {
+                                needReportPool4NotEnd.add(perfRecord);
+                            }
+                        }
+                        break;
+                }
             }
+        } catch (Exception e) {
+            // do nothing
         }
     }
 
-    public String summarizeNoException(){
+    private boolean needReport(PerfRecord perfRecord) {
+        switch (perfRecord.getPhase()) {
+            case TASK_TOTAL:
+            case SQL_QUERY:
+            case RESULT_NEXT_ALL:
+            case ODPS_BLOCK_CLOSE:
+                return true;
+        }
+        return false;
+    }
+
+    public String summarizeNoException() {
         String res;
         try {
             res = summarize();
         } catch (Exception e) {
-            res = "PerfTrace summarize has Exception "+e.getMessage();
+            res = "PerfTrace summarize has Exception " + e.getMessage();
         }
         return res;
     }
@@ -140,7 +185,7 @@ public class PerfTrace {
         }
 
         if (totalEndReport.size() > 0) {
-            sumEndPerfRecords(totalEndReport);
+            sumPerf4EndPrint(totalEndReport);
         }
 
         StringBuilder info = new StringBuilder();
@@ -148,15 +193,15 @@ public class PerfTrace {
         info.append("\n   1. all phase average time info and max time task info: \n\n");
         info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %-100s\n", "PHASE", "AVERAGE USED TIME", "ALL TASK NUM", "MAX USED TIME", "MAX TASK ID", "MAX TASK INFO"));
 
-        List<PerfRecord.PHASE> keys = new ArrayList<PerfRecord.PHASE>(perfRecordMaps.keySet());
-        Collections.sort(keys, new Comparator<PerfRecord.PHASE>() {
+        List<PHASE> keys = new ArrayList<PHASE>(perfRecordMaps4print.keySet());
+        Collections.sort(keys, new Comparator<PHASE>() {
             @Override
-            public int compare(PerfRecord.PHASE o1, PerfRecord.PHASE o2) {
+            public int compare(PHASE o1, PHASE o2) {
                 return o1.toInt() - o2.toInt();
             }
         });
-        for (PerfRecord.PHASE phase : keys) {
-            SumPerfRecord sumPerfRecord = perfRecordMaps.get(phase);
+        for (PHASE phase : keys) {
+            SumPerfRecord4Print sumPerfRecord = perfRecordMaps4print.get(phase);
             if (sumPerfRecord == null) {
                 continue;
             }
@@ -168,7 +213,12 @@ public class PerfTrace {
                     phase, unitTime(averageTime), sumPerfRecord.totalCount, unitTime(maxTime), jobId + "-" + maxTaskGroupId + "-" + maxTaskId, taskDetails.get(maxTaskId)));
         }
 
-        SumPerfRecord countSumPerf = Optional.fromNullable(perfRecordMaps.get(PerfRecord.PHASE.READ_TASK_DATA)).or(new SumPerfRecord());
+        //SumPerfRecord4Print countSumPerf = Optional.fromNullable(perfRecordMaps4print.get(PHASE.READ_TASK_DATA)).or(new SumPerfRecord4Print());
+
+        SumPerfRecord4Print countSumPerf = perfRecordMaps4print.get(PHASE.READ_TASK_DATA);
+        if(countSumPerf == null){
+            countSumPerf = new SumPerfRecord4Print();
+        }
 
         long averageRecords = countSumPerf.getAverageRecords();
         long averageBytes = countSumPerf.getAverageBytes();
@@ -181,7 +231,7 @@ public class PerfTrace {
         info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %18s | %-100s\n", "PHASE", "AVERAGE RECORDS", "AVERAGE BYTES", "MAX RECORDS", "MAX RECORD`S BYTES", "MAX TASK ID", "MAX TASK INFO"));
         if (maxTaskId4Records > -1) {
             info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %18s | %-100s\n"
-                    , PerfRecord.PHASE.READ_TASK_DATA, averageRecords, unitSize(averageBytes), maxRecord, unitSize(maxByte), jobId + "-" + maxTGID4Records + "-" + maxTaskId4Records, taskDetails.get(maxTaskId4Records)));
+                    , PHASE.READ_TASK_DATA, averageRecords, unitSize(averageBytes), maxRecord, unitSize(maxByte), jobId + "-" + maxTGID4Records + "-" + maxTaskId4Records, taskDetails.get(maxTaskId4Records)));
 
         }
         return info.toString();
@@ -209,29 +259,19 @@ public class PerfTrace {
     }
 
 
-    public synchronized ConcurrentHashMap<PerfRecord.PHASE, SumPerfRecord> getPerfRecordMaps() {
-        synchronized (endReportPool) {
-            // perfRecordMaps.get(perfRecord.getPhase()).add(perfRecord);
-            waitingReportSet.addAll(endReportPool);
-            totalEndReport.addAll(endReportPool);
-            endReportPool.clear();
+    public synchronized ConcurrentHashMap<PHASE, SumPerfRecord4Print> getPerfRecordMaps4print() {
+        if (totalEndReport.size() > 0) {
+            sumPerf4EndPrint(totalEndReport);
         }
-        if(totalEndReport.size() > 0 ){
-            sumEndPerfRecords(totalEndReport);
-        }
-        return perfRecordMaps;
+        return perfRecordMaps4print;
     }
 
-    public List<PerfRecord> getWaitingReportList() {
-        return new ArrayList<PerfRecord>(waitingReportSet);
+    public SumPerf4Report getSumPerf4Report() {
+        return sumPerf4Report;
     }
 
-    public List<PerfRecord> getStartReportPool() {
-        return startReportPool;
-    }
-
-    public List<PerfRecord> getEndReportPool() {
-        return endReportPool;
+    public Set<PerfRecord> getNeedReportPool4NotEnd() {
+        return needReportPool4NotEnd;
     }
 
     public List<PerfRecord> getTotalEndReport() {
@@ -250,40 +290,69 @@ public class PerfTrace {
         return isJob;
     }
 
-    public long getJobId() {
-        return jobId;
-    }
-
     private String cluster;
     private String jobDomain;
     private String srcType;
     private String dstType;
     private String srcGuid;
     private String dstGuid;
-    private String dataxType;
+    private Date windowStart;
+    private Date windowEnd;
+    private Date jobStartTime;
 
-    public void setJobInfo(Configuration jobInfo) {
-        this.jobInfo = jobInfo;
-        if (jobInfo != null) {
-            cluster = jobInfo.getString("cluster");
+    public void setJobInfo(Configuration jobInfo, boolean perfReportEnable, int channelNumber) {
+        try {
+            this.jobInfo = jobInfo;
+            if (jobInfo != null && perfReportEnable) {
 
-            String srcDomain = jobInfo.getString("srcDomain", "null");
-            String dstDomain = jobInfo.getString("dstDomain", "null");
-            jobDomain = srcDomain + "|" + dstDomain;
-            srcType = jobInfo.getString("srcType");
-            dstType = jobInfo.getString("dstType");
-            srcGuid = jobInfo.getString("srcGuid");
-            dstGuid = jobInfo.getString("dstGuid");
-            long jobId = jobInfo.getLong("jobId");
-            if (jobId > 0) {
-                //同步中心任务
-                dataxType = "dsc";
-            } else {
-                dataxType = "datax3";
+                cluster = jobInfo.getString("cluster");
+
+                String srcDomain = jobInfo.getString("srcDomain", "null");
+                String dstDomain = jobInfo.getString("dstDomain", "null");
+                jobDomain = srcDomain + "|" + dstDomain;
+                srcType = jobInfo.getString("srcType");
+                dstType = jobInfo.getString("dstType");
+                srcGuid = jobInfo.getString("srcGuid");
+                dstGuid = jobInfo.getString("dstGuid");
+                windowStart = getWindow(jobInfo.getString("windowStart"), true);
+                windowEnd = getWindow(jobInfo.getString("windowEnd"), false);
+                String jobIdStr = jobInfo.getString("jobId");
+                jobId = StringUtils.isEmpty(jobIdStr) ? (long) -5 : Long.parseLong(jobIdStr);
+                String jobVersionStr = jobInfo.getString("jobVersion");
+                jobVersion = StringUtils.isEmpty(jobVersionStr) ? (long) -4 : Long.parseLong(jobVersionStr);
+                jobStartTime = new Date();
             }
-        } else {
-            dataxType = "datax3";
+            this.perfReportEnable = perfReportEnable;
+            this.channelNumber = channelNumber;
+        } catch (Exception e) {
+            this.perfReportEnable = false;
         }
+    }
+
+    private Date getWindow(String windowStr, boolean startWindow) {
+        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd 00:00:00");
+        if (StringUtils.isNotEmpty(windowStr)) {
+            try {
+                return sdf1.parse(windowStr);
+            } catch (ParseException e) {
+                // do nothing
+            }
+        }
+
+        if (startWindow) {
+            try {
+                return sdf2.parse(sdf2.format(new Date()));
+            } catch (ParseException e1) {
+                //do nothing
+            }
+        }
+
+        return null;
+    }
+
+    public long getInstId() {
+        return instId;
     }
 
     public Configuration getJobInfo() {
@@ -294,27 +363,135 @@ public class PerfTrace {
         this.batchSize = batchSize;
     }
 
-    public void setPerfReportEnalbe(boolean perfReportEnalbe) {
-        this.perfReportEnalbe = perfReportEnalbe;
+    public synchronized JobStatisticsDto2 getReports(String mode) {
+
+        try {
+            if (!enable || !perfReportEnable) {
+                return null;
+            }
+
+            if (("job".equalsIgnoreCase(mode) && !isJob) || "tg".equalsIgnoreCase(mode) && isJob) {
+                return null;
+            }
+
+            //每次将未完成的task的统计清空
+            sumPerf4Report4NotEnd = new SumPerf4Report();
+            Set<PerfRecord> needReportPool4NotEndTmp = null;
+            synchronized (needReportPool4NotEnd) {
+                needReportPool4NotEndTmp = new HashSet<PerfRecord>(needReportPool4NotEnd);
+            }
+
+            long curNanoTime = System.nanoTime();
+            for (PerfRecord perfRecord : needReportPool4NotEndTmp) {
+                sumPerf4Report4NotEnd.add(curNanoTime, perfRecord);
+            }
+
+            JobStatisticsDto2 jdo = new JobStatisticsDto2();
+            jdo.setInstId(this.instId);
+            if (isJob) {
+                jdo.setTaskGroupId(-6);
+            } else {
+                jdo.setTaskGroupId(this.taskGroupId);
+            }
+            jdo.setJobId(this.jobId);
+            jdo.setJobVersion(this.jobVersion);
+            jdo.setWindowStart(this.windowStart);
+            jdo.setWindowEnd(this.windowEnd);
+            jdo.setJobStartTime(jobStartTime);
+            jdo.setJobRunTimeMs(System.currentTimeMillis() - jobStartTime.getTime());
+            jdo.setJobPriority(this.priority);
+            jdo.setChannelNum(this.channelNumber);
+            jdo.setCluster(this.cluster);
+            jdo.setJobDomain(this.jobDomain);
+            jdo.setSrcType(this.srcType);
+            jdo.setDstType(this.dstType);
+            jdo.setSrcGuid(this.srcGuid);
+            jdo.setDstGuid(this.dstGuid);
+            jdo.setHostAddress(HostUtils.IP);
+
+            //sum
+            jdo.setTaskTotalTimeMs(sumPerf4Report4NotEnd.totalTaskRunTimeInMs + sumPerf4Report.totalTaskRunTimeInMs);
+            jdo.setOdpsBlockCloseTimeMs(sumPerf4Report4NotEnd.odpsCloseTimeInMs + sumPerf4Report.odpsCloseTimeInMs);
+            jdo.setSqlQueryTimeMs(sumPerf4Report4NotEnd.sqlQueryTimeInMs + sumPerf4Report.sqlQueryTimeInMs);
+            jdo.setResultNextTimeMs(sumPerf4Report4NotEnd.resultNextTimeInMs + sumPerf4Report.resultNextTimeInMs);
+
+            return jdo;
+        } catch (Exception e) {
+            // do nothing
+        }
+
+        return null;
     }
 
-
-    private void sumEndPerfRecords(List<PerfRecord> totalEndReport) {
+    private void sumPerf4EndPrint(List<PerfRecord> totalEndReport) {
         if (!enable || totalEndReport == null) {
             return;
         }
 
         for (PerfRecord perfRecord : totalEndReport) {
-            perfRecordMaps.putIfAbsent(perfRecord.getPhase(), new SumPerfRecord());
-            perfRecordMaps.get(perfRecord.getPhase()).add(perfRecord);
+            perfRecordMaps4print.putIfAbsent(perfRecord.getPhase(), new SumPerfRecord4Print());
+            perfRecordMaps4print.get(perfRecord.getPhase()).add(perfRecord);
         }
 
         totalEndReport.clear();
     }
 
+    public void setChannelNumber(int needChannelNumber) {
+        this.channelNumber = needChannelNumber;
+    }
 
 
-    public static class SumPerfRecord {
+    public static class SumPerf4Report {
+        long totalTaskRunTimeInMs = 0L;
+        long odpsCloseTimeInMs = 0L;
+        long sqlQueryTimeInMs = 0L;
+        long resultNextTimeInMs = 0L;
+
+        public void add(long curNanoTime,PerfRecord perfRecord) {
+            try {
+                long runTimeEndInMs;
+                if (perfRecord.getElapsedTimeInNs() == -1) {
+                    runTimeEndInMs = (curNanoTime - perfRecord.getStartTimeInNs()) / 1000000;
+                } else {
+                    runTimeEndInMs = perfRecord.getElapsedTimeInNs() / 1000000;
+                }
+                switch (perfRecord.getPhase()) {
+                    case TASK_TOTAL:
+                        totalTaskRunTimeInMs += runTimeEndInMs;
+                        break;
+                    case SQL_QUERY:
+                        sqlQueryTimeInMs += runTimeEndInMs;
+                        break;
+                    case RESULT_NEXT_ALL:
+                        resultNextTimeInMs += runTimeEndInMs;
+                        break;
+                    case ODPS_BLOCK_CLOSE:
+                        odpsCloseTimeInMs += runTimeEndInMs;
+                        break;
+                }
+            }catch (Exception e){
+                //do nothing
+            }
+        }
+
+        public long getTotalTaskRunTimeInMs() {
+            return totalTaskRunTimeInMs;
+        }
+
+        public long getOdpsCloseTimeInMs() {
+            return odpsCloseTimeInMs;
+        }
+
+        public long getSqlQueryTimeInMs() {
+            return sqlQueryTimeInMs;
+        }
+
+        public long getResultNextTimeInMs() {
+            return resultNextTimeInMs;
+        }
+    }
+
+    public static class SumPerfRecord4Print {
         private long perfTimeTotal = 0;
         private long averageTime = 0;
         private long maxTime = 0;
@@ -331,12 +508,12 @@ public class PerfTrace {
         private int maxTaskId4Records = -1;
         private int maxTGID4Records = -1;
 
-        synchronized void add(PerfRecord perfRecord) {
+        public void add(PerfRecord perfRecord) {
             if (perfRecord == null) {
                 return;
             }
             perfTimeTotal += perfRecord.getElapsedTimeInNs();
-            if (perfRecord.getElapsedTimeInNs() > maxTime) {
+            if (perfRecord.getElapsedTimeInNs() >= maxTime) {
                 maxTime = perfRecord.getElapsedTimeInNs();
                 maxTaskId = perfRecord.getTaskId();
                 maxTaskGroupId = perfRecord.getTaskGroupId();
@@ -344,7 +521,7 @@ public class PerfTrace {
 
             recordsTotal += perfRecord.getCount();
             sizesTotal += perfRecord.getSize();
-            if (perfRecord.getCount() > maxRecord) {
+            if (perfRecord.getCount() >= maxRecord) {
                 maxRecord = perfRecord.getCount();
                 maxByte = perfRecord.getSize();
                 maxTaskId4Records = perfRecord.getTaskId();

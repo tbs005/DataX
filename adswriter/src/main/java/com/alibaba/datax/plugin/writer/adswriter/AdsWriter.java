@@ -7,6 +7,8 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.insert.AdsInsertProxy;
 import com.alibaba.datax.plugin.writer.adswriter.insert.AdsInsertUtil;
@@ -24,6 +26,8 @@ import com.aliyun.odps.OdpsException;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.task.SQLTask;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +78,7 @@ public class AdsWriter extends Writer {
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
                 loadModeInit();
-            } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode)) {
+            } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
                 AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
                 List<String> allColumns = AdsInsertUtil.getAdsTableColumnNames(originalConfig);
                 AdsInsertUtil.dealColumnConf(originalConfig, allColumns);
@@ -82,7 +86,7 @@ public class AdsWriter extends Writer {
                 LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
                         originalConfig.toJSON());
             } else {
-                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert'");
+                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert' 或者 'stream'");
             }
         }
 
@@ -90,6 +94,20 @@ public class AdsWriter extends Writer {
             this.adsHelper = AdsUtil.createAdsHelper(this.originalConfig);
             this.odpsAdsHelper = AdsUtil.createAdsHelperWithOdpsAccount(this.originalConfig);
             this.transProjConf = TransferProjectConf.create(this.originalConfig);
+            // 打印权限申请流程到日志中
+            LOG.info(String
+                    .format("%s%n%s%n%s",
+                            "如果您直接是odps->ads数据同步, 需要做2方面授权:",
+                            "[1] ads官方账号至少需要有待同步表的describe和select权限, 因为ads系统需要获取odps待同步表的结构和数据信息",
+                            "[2] 您配置的ads数据源访问账号ak, 需要有向指定的ads数据库发起load data的权限, 您可以在ads系统中添加授权"));
+            LOG.info(String
+                    .format("%s%s%n%s%n%s",
+                            "如果您直接是rds(或其它非odps数据源)->ads数据同步, 流程是先将数据装载如odps临时表，再从odps临时表->ads, ",
+                            String.format("中转odps项目为%s,中转项目账号为%s, 权限方面:",
+                                    this.transProjConf.getProject(),
+                                    this.transProjConf.getAccount()),
+                            "[1] ads官方账号至少需要有待同步表(这里是odps临时表)的describe和select权限, 因为ads系统需要获取odps待同步表的结构和数据信息，此部分部署时已经完成授权",
+                            String.format("[2] 中转odps对应的账号%s, 需要有向指定的ads数据库发起load data的权限, 您可以在ads系统中添加授权", this.transProjConf.getAccount())));
 
             /**
              * 如果是从odps导入到ads，直接load data然后System.exit()
@@ -97,8 +115,6 @@ public class AdsWriter extends Writer {
             if (super.getPeerPluginName().equals(ODPS_READER)) {
                 transferFromOdpsAndExit();
             }
-
-
             Account odpsAccount;
             odpsAccount = new AliyunAccount(transProjConf.getAccessId(), transProjConf.getAccessKey());
 
@@ -170,7 +186,24 @@ public class AdsWriter extends Writer {
                 //导数据到odps表中
                 this.odpsWriterJobProxy.prepare();
             } else {
-                //todo 目前insert模式不支持presql
+                // 实时表模式非分库分表
+                String adsTable = this.originalConfig.getString(Key.ADS_TABLE);
+                List<String> preSqls = this.originalConfig.getList(Key.PRE_SQL,
+                        String.class);
+                List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
+                        preSqls, adsTable);
+                if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+                    // 说明有 preSql 配置，则此处删除掉
+                    this.originalConfig.remove(Key.PRE_SQL);
+                    Connection preConn = AdsUtil.getAdsConnect(this.originalConfig);
+                    LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
+                            StringUtils.join(renderedPreSqls, ";"),
+                            this.originalConfig.getString(Key.ADS_URL));
+                    WriterUtil.executeSqls(preConn, renderedPreSqls,
+                            this.originalConfig.getString(Key.ADS_URL),
+                            DataBaseType.ADS);
+                    DBUtil.closeDBResources(null, null, preConn);
+                }
             }
         }
 
@@ -194,7 +227,25 @@ public class AdsWriter extends Writer {
                 loadAdsData(odpsAdsHelper, this.odpsTransTableName, null);
                 this.odpsWriterJobProxy.post();
             } else {
-                //insert mode do noting
+                // 实时表模式非分库分表
+                String adsTable = this.originalConfig.getString(Key.ADS_TABLE);
+                List<String> postSqls = this.originalConfig.getList(
+                        Key.POST_SQL, String.class);
+                List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
+                        postSqls, adsTable);
+                if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+                    // 说明有 preSql 配置，则此处删除掉
+                    this.originalConfig.remove(Key.POST_SQL);
+                    Connection postConn = AdsUtil.getAdsConnect(this.originalConfig);
+                    LOG.info(
+                            "Begin to execute postSqls:[{}]. context info:{}.",
+                            StringUtils.join(renderedPostSqls, ";"),
+                            this.originalConfig.getString(Key.ADS_URL));
+                    WriterUtil.executeSqls(postConn, renderedPostSqls,
+                            this.originalConfig.getString(Key.ADS_URL),
+                            DataBaseType.ADS);
+                    DBUtil.closeDBResources(null, null, postConn);
+                }
             }
         }
 
@@ -249,30 +300,46 @@ public class AdsWriter extends Writer {
     }
 
     public static class Task extends Writer.Task {
+        private static final Logger LOG = LoggerFactory.getLogger(Writer.Task.class);
         private Configuration writerSliceConfig;
         private OdpsWriter.Task odpsWriterTaskProxy = new OdpsWriter.Task();
 
-
+        
         private String writeMode;
+        private String schema;
+        private String table;
         private int columnNumber;
+        // warn: 只有在insert, stream模式才有, 对于load模式表明为odps临时表了
+        private TableInfo tableInfo;
 
         @Override
         public void init() {
             writerSliceConfig = super.getPluginJobConf();
             this.writeMode = this.writerSliceConfig.getString(Key.WRITE_MODE);
-
+            this.schema = writerSliceConfig.getString(Key.SCHEMA);
+            this.table =  writerSliceConfig.getString(Key.ADS_TABLE);
+            
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.setPluginJobConf(writerSliceConfig);
                 odpsWriterTaskProxy.init();
-            } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode)) {
-                List<String> allColumns = AdsInsertUtil.getAdsTableColumnNames(writerSliceConfig);
+            } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
+                try {
+                    this.tableInfo = AdsUtil.createAdsHelper(this.writerSliceConfig).getTableInfo(this.table);
+                } catch (AdsException e) {
+                    throw DataXException.asDataXException(AdsWriterErrorCode.CREATE_ADS_HELPER_FAILED, e);
+                }
+                List<String> allColumns = new ArrayList<String>();
+                List<ColumnInfo> columnInfo =  this.tableInfo.getColumns();
+                for (ColumnInfo eachColumn : columnInfo) {
+                    allColumns.add(eachColumn.getName());
+                }
+                LOG.info("table:[{}] all columns:[\n{}\n].", this.writerSliceConfig.get(Key.ADS_TABLE), StringUtils.join(allColumns, ","));
                 AdsInsertUtil.dealColumnConf(writerSliceConfig, allColumns);
                 List<String> userColumns = writerSliceConfig.getList(Key.COLUMN, String.class);
                 this.columnNumber = userColumns.size();
             } else {
-                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert'");
+                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert' 或者 'stream'");
             }
-
         }
 
         @Override
@@ -284,24 +351,17 @@ public class AdsWriter extends Writer {
             }
         }
 
-        //TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
         public void startWrite(RecordReceiver recordReceiver) {
+            // 这里的是非odps数据源->odps中转临时表数据同步, load操作在job post阶段完成
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.setTaskPluginCollector(super.getTaskPluginCollector());
                 odpsWriterTaskProxy.startWrite(recordReceiver);
             } else {
-                //todo insert 模式
-                String username = writerSliceConfig.getString(Key.USERNAME);
-                String password = writerSliceConfig.getString(Key.PASSWORD);
-                String adsURL = writerSliceConfig.getString(Key.ADS_URL);
-                String schema = writerSliceConfig.getString(Key.SCHEMA);
-                String table =  writerSliceConfig.getString(Key.ADS_TABLE);
+                // insert 模式
                 List<String> columns = writerSliceConfig.getList(Key.COLUMN, String.class);
-                String jdbcUrl = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
-                Connection connection = DBUtil.getConnection(DataBaseType.ADS,
-                        jdbcUrl, username, password);
+                Connection connection = AdsUtil.getAdsConnect(this.writerSliceConfig);
                 TaskPluginCollector taskPluginCollector = super.getTaskPluginCollector();
-                AdsInsertProxy proxy = new AdsInsertProxy(schema + "." + table, columns, writerSliceConfig, taskPluginCollector);
+                AdsInsertProxy proxy = new AdsInsertProxy(schema + "." + table, columns, writerSliceConfig, taskPluginCollector, this.tableInfo);
                 proxy.startWriteWithConnection(recordReceiver, connection, columnNumber);
             }
         }

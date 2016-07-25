@@ -4,8 +4,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.mongodbwriter.KeyConstant;
 import com.alibaba.datax.plugin.writer.mongodbwriter.MongoDBWriterErrorCode;
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
@@ -14,12 +12,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 
-/**
- * Created by jianying.wcj on 2015/3/17 0017.
- */
 public class MongoUtil {
 
     public static MongoClient initMongoClient(Configuration conf) {
@@ -63,14 +56,13 @@ public class MongoUtil {
      * @return
      */
     private static boolean isHostPortPattern(List<Object> addressList) {
-        boolean isMatch = false;
         for(Object address : addressList) {
-            String regex = "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):([0-9]+)";
-            if(((String)address).matches(regex)) {
-                isMatch = true;
+            String regex = "(\\S+):([0-9]+)";
+            if(!((String)address).matches(regex)) {
+                return false;
             }
         }
-        return isMatch;
+        return true;
     }
     /**
      * 转换为mongo地址协议

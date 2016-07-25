@@ -13,7 +13,12 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.unstructuredstorage.reader.ColumnEntry;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderErrorCode;
+import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.hive.ql.io.orc.*;
@@ -28,9 +33,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Created by mingya.wmy on 2015/8/12.
- */
 public class DFSUtil {
     private static final Logger LOG = LoggerFactory.getLogger(HdfsReader.Job.class);
 
@@ -39,10 +41,21 @@ public class DFSUtil {
     private static final int DIRECTORY_SIZE_GUESS = 16 * 1024;
 
     private String specifiedFileType = null;
-
-    public DFSUtil(String defaultFS){
+    
+    public DFSUtil(Configuration taskConfig){
         hadoopConf = new org.apache.hadoop.conf.Configuration();
-        hadoopConf.set("fs.defaultFS", defaultFS);
+        //io.file.buffer.size 性能参数
+        //http://blog.csdn.net/yangjl38/article/details/7583374
+        Configuration hadoopSiteParams = taskConfig.getConfiguration(Key.HADOOP_CONFIG);
+        JSONObject hadoopSiteParamsAsJsonObject = JSON.parseObject(taskConfig.getString(Key.HADOOP_CONFIG));
+        if (null != hadoopSiteParams) {
+            Set<String> paramKeys = hadoopSiteParams.getKeys();
+            for (String each : paramKeys) {
+                hadoopConf.set(each, hadoopSiteParamsAsJsonObject.getString(each));
+            }
+        }
+        hadoopConf.set("fs.defaultFS", taskConfig.getString(Key.DEFAULT_FS));
+        LOG.info(String.format("hadoopConfig details:%s", JSON.toJSONString(hadoopConf)));
     }
 
 
@@ -159,7 +172,7 @@ public class DFSUtil {
         return null;
     }
 
-    public BufferedReader getBufferedReader(String filepath, HdfsFileType fileType, String encoding){
+    public BufferedReader getBufferedReader(String filepath, HdfsFileType fileType, String encoding, int bufferSize){
         try {
             FileSystem fs = FileSystem.get(hadoopConf);
             Path path = new Path(filepath);
@@ -181,12 +194,12 @@ public class DFSUtil {
                 //each time the retry interval for 20 seconds
                 in = fs.open(path);
                 cin = codec.createInputStream(in);
-                br = new BufferedReader(new InputStreamReader(cin, encoding));
+                br = new BufferedReader(new InputStreamReader(cin, encoding), bufferSize);
             } else {
                 //If the network disconnected, this method will retry 45 times
                 // each time the retry interval for 20 seconds
                 in = fs.open(path);
-                br = new BufferedReader(new InputStreamReader(in, encoding));
+                br = new BufferedReader(new InputStreamReader(in, encoding), bufferSize);
             }
             return br;
         }catch (Exception e){
@@ -198,35 +211,37 @@ public class DFSUtil {
     public void orcFileStartRead(String sourceOrcFilePath, Configuration readerSliceConfig,
                                  RecordSender recordSender, TaskPluginCollector taskPluginCollector){
 
-        List<Configuration> columnConfigs = readerSliceConfig.getListConfiguration(Key.COLUMN);
-        String nullFormat = readerSliceConfig.getString(Key.NULL_FORMAT);
-        String allColumns = "";
-        String allColumnTypes = "";
+        //List<Configuration> columnConfigs = readerSliceConfig.getListConfiguration(Key.COLUMN);
+        List<ColumnEntry> column = UnstructuredStorageReaderUtil
+                .getListColumnEntry(readerSliceConfig, com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
+        String nullFormat = readerSliceConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.NULL_FORMAT);
+        StringBuilder allColumns = new StringBuilder();
+        StringBuilder allColumnTypes = new StringBuilder();
         boolean isReadAllColumns = false;
         int columnIndexMax = -1;
         // 判断是否读取所有列
-        if (null == columnConfigs || columnConfigs.size() == 0) {
+        if (null == column || column.size() == 0) {
             int allColumnsCount = getAllColumnsCount(sourceOrcFilePath);
             columnIndexMax = allColumnsCount-1;
             isReadAllColumns = true;
         }
         else {
-            columnIndexMax = getMaxIndex(columnConfigs);
+            columnIndexMax = getMaxIndex(column);
         }
         for(int i=0; i<=columnIndexMax; i++){
-            allColumns += "col";
-            allColumnTypes += "string";
+            allColumns.append("col");
+            allColumnTypes.append("string");
             if(i!=columnIndexMax){
-                allColumns += ",";
-                allColumnTypes += ":";
+                allColumns.append(",");
+                allColumnTypes.append(":");
             }
         }
         if(columnIndexMax>=0) {
             JobConf conf = new JobConf(hadoopConf);
             Path orcFilePath = new Path(sourceOrcFilePath);
             Properties p = new Properties();
-            p.setProperty("columns", allColumns);
-            p.setProperty("columns.types", allColumnTypes);
+            p.setProperty("columns", allColumns.toString());
+            p.setProperty("columns.types", allColumnTypes.toString());
             try {
                 OrcSerde serde = new OrcSerde();
                 serde.initialize(conf, p);
@@ -236,6 +251,7 @@ public class DFSUtil {
 
                 //If the network disconnected, will retry 45 times, each time the retry interval for 20 seconds
                 //Each file as a split
+                //TODO multy threads
                 InputSplit[] splits = in.getSplits(conf, 1);
 
                 RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
@@ -252,7 +268,7 @@ public class DFSUtil {
                         Object field = inspector.getStructFieldData(value, fields.get(i));
                         recordFields.add(field);
                     }
-                    transportOneRecord(columnConfigs, recordFields, recordSender,
+                    transportOneRecord(column, recordFields, recordSender,
                             taskPluginCollector, isReadAllColumns,nullFormat);
                 }
                 reader.close();
@@ -269,7 +285,7 @@ public class DFSUtil {
         }
     }
 
-    private Record transportOneRecord(List<Configuration> columnConfigs, List<Object> recordFields
+    private Record transportOneRecord(List<ColumnEntry> columnConfigs, List<Object> recordFields
             , RecordSender recordSender, TaskPluginCollector taskPluginCollector, boolean isReadAllColumns, String nullFormat){
         Record record = recordSender.createRecord();
         Column columnGenerated = null;
@@ -286,11 +302,10 @@ public class DFSUtil {
                 }
             }
             else {
-                for (Configuration columnConfig : columnConfigs) {
-                    String columnType = columnConfig
-                            .getNecessaryValue(Key.TYPE, HdfsReaderErrorCode.CONFIG_INVALID_EXCEPTION);
-                    Integer columnIndex = columnConfig.getInt(Key.INDEX);
-                    String columnConst = columnConfig.getString(Key.VALUE);
+                for (ColumnEntry columnConfig : columnConfigs) {
+                    String columnType = columnConfig.getType();
+                    Integer columnIndex = columnConfig.getIndex();
+                    String columnConst = columnConfig.getValue();
 
                     String columnValue = null;
 
@@ -343,7 +358,7 @@ public class DFSUtil {
                                     Date date = null;
                                     columnGenerated = new DateColumn(date);
                                 } else {
-                                    String formatString = columnConfig.getString(Key.FORMAT);
+                                    String formatString = columnConfig.getFormat();
                                     if (StringUtils.isNotBlank(formatString)) {
                                         // 用户自己配置的格式转换
                                         SimpleDateFormat format = new SimpleDateFormat(
@@ -410,10 +425,10 @@ public class DFSUtil {
         }
     }
 
-    private int getMaxIndex(List<Configuration> columnConfigs){
+    private int getMaxIndex(List<ColumnEntry> columnConfigs){
         int maxIndex = -1;
-        for (Configuration columnConfig : columnConfigs) {
-            Integer columnIndex = columnConfig.getInt(Key.INDEX);
+        for (ColumnEntry columnConfig : columnConfigs) {
+            Integer columnIndex = columnConfig.getIndex();
             if (columnIndex != null && columnIndex < 0) {
                 String message = String.format("您column中配置的index不能小于0，请修改为正确的index");
                 LOG.error(message);

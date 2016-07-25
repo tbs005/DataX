@@ -13,5 +13,7 @@ public class Key {
     public static final String BUCKET = "bucket";
 
     public static final String OBJECT = "object";
+    
+    public static final String CNAME = "cname";
 
 }

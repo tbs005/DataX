@@ -14,7 +14,6 @@ import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.Engine;
 import com.alibaba.datax.core.container.util.HookInvoker;
 import com.alibaba.datax.core.container.util.JobAssignUtil;
-import com.alibaba.datax.core.job.meta.ExecuteMode;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.job.scheduler.processinner.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.communication.Communication;
@@ -27,6 +26,8 @@ import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
@@ -110,11 +111,11 @@ public class JobContainer extends AbstractContainer {
 
                 LOG.debug("jobContainer starts to do init ...");
                 this.init();
-                LOG.debug("jobContainer starts to do prepare ...");
+                LOG.info("jobContainer starts to do prepare ...");
                 this.prepare();
-                LOG.debug("jobContainer starts to do split ...");
+                LOG.info("jobContainer starts to do split ...");
                 this.totalStage = this.split();
-                LOG.debug("jobContainer starts to do schedule ...");
+                LOG.info("jobContainer starts to do schedule ...");
                 this.schedule();
                 LOG.debug("jobContainer starts to do post ...");
                 this.post();
@@ -395,11 +396,17 @@ public class JobContainer extends AbstractContainer {
         List<Configuration> writerTaskConfigs = this
                 .doWriterSplit(taskNumber);
 
+        List<Configuration> transformerList = this.configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER);
+
+        LOG.debug("transformer configuration: "+ JSON.toJSONString(transformerList));
         /**
          * 输入是reader和writer的parameter list，输出是content下面元素的list
          */
         List<Configuration> contentConfig = mergeReaderAndWriterTaskConfigs(
-                readerTaskConfigs, writerTaskConfigs);
+                readerTaskConfigs, writerTaskConfigs, transformerList);
+
+
+        LOG.debug("contentConfig configuration: "+ JSON.toJSONString(contentConfig));
 
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, contentConfig);
 
@@ -420,7 +427,7 @@ public class JobContainer extends AbstractContainer {
             Long channelLimitedByteSpeed = this.configuration
                     .getLong(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE);
             if (channelLimitedByteSpeed == null || channelLimitedByteSpeed <= 0) {
-                throw DataXException.asDataXException(
+                DataXException.asDataXException(
                         FrameworkErrorCode.CONFIG_ERROR,
                         "在有总bps限速条件下，单个channel的bps值不能为空，也不能为非正数");
             }
@@ -441,7 +448,7 @@ public class JobContainer extends AbstractContainer {
             Long channelLimitedRecordSpeed = this.configuration.getLong(
                     CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD);
             if (channelLimitedRecordSpeed == null || channelLimitedRecordSpeed <= 0) {
-                throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
+                DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
                         "在有总tps限速条件下，单个channel的tps值不能为空，也不能为非正数");
             }
 
@@ -492,6 +499,7 @@ public class JobContainer extends AbstractContainer {
                 CoreConstant.DATAX_JOB_CONTENT).size();
 
         this.needChannelNumber = Math.min(this.needChannelNumber, taskNumber);
+        PerfTrace.getInstance().setChannelNumber(needChannelNumber);
 
         /**
          * 通过获取配置信息得到每个taskGroup需要运行哪些tasks任务
@@ -505,12 +513,19 @@ public class JobContainer extends AbstractContainer {
         ExecuteMode executeMode = null;
         AbstractScheduler scheduler;
         try {
-            executeMode = ExecuteMode.STANDALONE;
+        	executeMode = ExecuteMode.STANDALONE;
             scheduler = initStandaloneScheduler(this.configuration);
 
             //设置 executeMode
             for (Configuration taskGroupConfig : taskGroupConfigs) {
                 taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, executeMode.getValue());
+            }
+
+            if (executeMode == ExecuteMode.LOCAL || executeMode == ExecuteMode.DISTRIBUTE) {
+                if (this.jobId <= 0) {
+                    throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+                            "在[ local | distribute ]模式下必须设置jobId，并且其值 > 0 .");
+                }
             }
 
             LOG.info("Running by {} Mode.", executeMode);
@@ -532,6 +547,7 @@ public class JobContainer extends AbstractContainer {
          */
         this.checkLimit();
     }
+
 
     private AbstractScheduler initStandaloneScheduler(Configuration configuration) {
         AbstractContainerCommunicator containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
@@ -587,6 +603,7 @@ public class JobContainer extends AbstractContainer {
 
         super.getContainerCommunicator().report(reportCommunication);
 
+
         LOG.info(String.format(
                 "\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"
                         + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n"
@@ -610,11 +627,29 @@ public class JobContainer extends AbstractContainer {
                 String.valueOf(CommunicationTool.getTotalErrorRecords(communication))
         ));
 
+        if (communication.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS) > 0
+                || communication.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS) > 0
+                || communication.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS) > 0) {
+            LOG.info(String.format(
+                    "\n" + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n",
+                    "Transformer成功记录总数",
+                    communication.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS),
+
+                    "Transformer失败记录总数",
+                    communication.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS),
+
+                    "Transformer过滤记录总数",
+                    communication.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS)
+            ));
+        }
+
 
     }
 
     /**
      * reader job的初始化，返回Reader.Job
+     *
+     * @return
      */
     private Reader.Job initJobReader(
             JobPluginCollector jobPluginCollector) {
@@ -643,6 +678,8 @@ public class JobContainer extends AbstractContainer {
 
     /**
      * writer job的初始化，返回Writer.Job
+     *
+     * @return
      */
     private Writer.Job initJobWriter(
             JobPluginCollector jobPluginCollector) {
@@ -725,10 +762,21 @@ public class JobContainer extends AbstractContainer {
 
     /**
      * 按顺序整合reader和writer的配置，这里的顺序不能乱！ 输入是reader、writer级别的配置，输出是一个完整task的配置
+     *
+     * @param readerTasksConfigs
+     * @param writerTasksConfigs
+     * @return
      */
     private List<Configuration> mergeReaderAndWriterTaskConfigs(
             List<Configuration> readerTasksConfigs,
             List<Configuration> writerTasksConfigs) {
+        return mergeReaderAndWriterTaskConfigs(readerTasksConfigs, writerTasksConfigs, null);
+    }
+
+    private List<Configuration> mergeReaderAndWriterTaskConfigs(
+            List<Configuration> readerTasksConfigs,
+            List<Configuration> writerTasksConfigs,
+            List<Configuration> transformerConfigs) {
         if (readerTasksConfigs.size() != writerTasksConfigs.size()) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
@@ -748,6 +796,11 @@ public class JobContainer extends AbstractContainer {
                     this.writerPluginName);
             taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER,
                     writerTasksConfigs.get(i));
+
+            if(transformerConfigs!=null && transformerConfigs.size()>0){
+                taskConfig.set(CoreConstant.JOB_TRANSFORMER, transformerConfigs);
+            }
+
             taskConfig.set(CoreConstant.TASK_ID, i);
             contentConfigs.add(taskConfig);
         }

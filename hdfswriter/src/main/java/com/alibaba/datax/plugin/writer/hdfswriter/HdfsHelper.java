@@ -446,8 +446,8 @@ public  class HdfsHelper {
             for (int i = 0; i < recordLength; i++) {
                 column = record.getColumn(i);
                 //todo as method
-                String rowData = column.getRawData().toString();
-                if (null != column.getRawData() && StringUtils.isNotBlank(rowData)) {
+                if (null != column.getRawData()) {
+                    String rowData = column.getRawData().toString();
                     SupportHiveDataType columnType = SupportHiveDataType.valueOf(
                             columnsConfiguration.get(i).getString(Key.TYPE).toUpperCase());
                     //根据writer端类型配置做类型转换

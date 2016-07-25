@@ -15,9 +15,6 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
 
-/**
- * Time:    2015-05-07 16:48
- */
 public class ConfigurationChecker {
 
     public static void check(Configuration config) {

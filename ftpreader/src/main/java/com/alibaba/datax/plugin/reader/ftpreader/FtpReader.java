@@ -1,24 +1,19 @@
 package com.alibaba.datax.plugin.reader.ftpreader;
 
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.spi.Reader;
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * 
- * @ClassName: FtpFileReader
- * @date 2015年7月6日 上午9:24:57
- *
- */
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.common.spi.Reader;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
+
 public class FtpReader extends Reader {
 	public static class Job extends Reader.Job {
 		private static final Logger LOG = LoggerFactory.getLogger(Job.class);
@@ -122,7 +117,14 @@ public class FtpReader extends Reader {
 
 		@Override
 		public void destroy() {
-			ftpHelper.logoutFtpServer();
+		    try {
+                this.ftpHelper.logoutFtpServer();
+            } catch (Exception e) {
+                String message = String.format(
+                        "关闭与ftp服务器连接失败: [%s] host=%s, username=%s, port=%s",
+                        e.getMessage(), host, username, port);
+                LOG.error(message, e);
+            }
 		}
 
 		// warn: 如果源目录为空会报错，拖空目录意图=>空文件显示指定此意图
@@ -220,7 +222,14 @@ public class FtpReader extends Reader {
 
 		@Override
 		public void destroy() {
-			ftpHelper.logoutFtpServer();
+			try {
+                this.ftpHelper.logoutFtpServer();
+            } catch (Exception e) {
+                String message = String.format(
+                        "关闭与ftp服务器连接失败: [%s] host=%s, username=%s, port=%s",
+                        e.getMessage(), host, username, port);
+                LOG.error(message, e);
+            }
 		}
 
 		@Override

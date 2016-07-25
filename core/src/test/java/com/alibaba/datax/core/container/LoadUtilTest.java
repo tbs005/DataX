@@ -16,6 +16,19 @@ public class LoadUtilTest extends CaseInitializer {
 	@Test
 	public void test() {
 		LoadUtil.bind(ConfigurationProducer.produce());
+
+		AbstractJobPlugin jobPluginHbase = LoadUtil.loadJobPlugin(
+				PluginType.WRITER, "hbasebulkwriter2_11x");
+		System.out.println(JSON.toJSONString(jobPluginHbase));
+		Assert.assertTrue(jobPluginHbase.getPluginName().equals("hbasebulkwriter2_11x"));
+
+
+		AbstractTaskPlugin taskPluginHbase = LoadUtil.loadTaskPlugin(
+				PluginType.WRITER, "hbasebulkwriter2_11x");
+		System.out.println(JSON.toJSONString(taskPluginHbase));
+		Assert.assertTrue(taskPluginHbase.getPluginName().equals("hbasebulkwriter2_11x"));
+
+
 		AbstractJobPlugin jobPlugin = LoadUtil.loadJobPlugin(
                 PluginType.READER, "fakereader");
 		System.out.println(JSON.toJSONString(jobPlugin));

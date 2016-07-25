@@ -3,15 +3,18 @@ package com.alibaba.datax.plugin.writer.osswriter;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.StringWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +23,10 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.plugin.unstructuredstorage.writer.TextCsvWriterManager;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredStorageWriterUtil;
+import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredWriter;
 import com.alibaba.datax.plugin.writer.osswriter.util.OssUtil;
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
@@ -29,7 +35,6 @@ import com.aliyun.oss.model.CompleteMultipartUploadRequest;
 import com.aliyun.oss.model.CompleteMultipartUploadResult;
 import com.aliyun.oss.model.InitiateMultipartUploadRequest;
 import com.aliyun.oss.model.InitiateMultipartUploadResult;
-import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.PartETag;
@@ -200,11 +205,12 @@ public class OssWriter extends Writer {
                         .clone();
 
                 String fullObjectName = null;
-                objectSuffix = UUID.randomUUID().toString().replace('-', '_');
+                objectSuffix = StringUtils.replace(
+                        UUID.randomUUID().toString(), "-", "");
                 fullObjectName = String.format("%s__%s", object, objectSuffix);
                 while (allObjects.contains(fullObjectName)) {
-                    objectSuffix = UUID.randomUUID().toString()
-                            .replace('-', '_');
+                    objectSuffix = StringUtils.replace(UUID.randomUUID()
+                            .toString(), "-", "");
                     fullObjectName = String.format("%s__%s", object,
                             objectSuffix);
                 }
@@ -233,9 +239,11 @@ public class OssWriter extends Writer {
         private String encoding;
         private char fieldDelimiter;
         private String dateFormat;
+        private DateFormat dateParse;
         private String fileFormat;
         private List<String> header;
-        private Long maxFileSize;//MB
+        private Long maxFileSize;// MB
+        private String suffix;
 
         @Override
         public void init() {
@@ -249,6 +257,9 @@ public class OssWriter extends Writer {
                     .getString(
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Key.DATE_FORMAT,
                             null);
+            if (StringUtils.isNotBlank(this.dateFormat)) {
+                this.dateParse = new SimpleDateFormat(dateFormat);
+            }
             this.encoding = this.writerSliceConfig
                     .getString(
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
@@ -266,8 +277,14 @@ public class OssWriter extends Writer {
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Key.HEADER,
                             null, String.class);
             this.maxFileSize = this.writerSliceConfig
-                    .getLong(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.MAX_FILE_SIZE,
+                    .getLong(
+                            com.alibaba.datax.plugin.unstructuredstorage.writer.Key.MAX_FILE_SIZE,
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.MAX_FILE_SIZE);
+            this.suffix = this.writerSliceConfig
+                    .getString(
+                            com.alibaba.datax.plugin.unstructuredstorage.writer.Key.SUFFIX,
+                            com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.DEFAULT_SUFFIX);
+            this.suffix = this.suffix.trim();// warn: need trim
         }
 
         @Override
@@ -276,8 +293,13 @@ public class OssWriter extends Writer {
             final long partSize = 1024 * 1024 * 10L;
             long numberCacul = (this.maxFileSize * 1024 * 1024L) / partSize;
             final long maxPartNumber = numberCacul >= 1 ? numberCacul : 1;
-            int objectSufix = 0;
-            StringBuilder sb = new StringBuilder();
+            int objectRollingNumber = 0;
+            //warn: may be StringBuffer->StringBuilder
+            StringWriter sw = new StringWriter();
+            StringBuffer sb = sw.getBuffer();
+            UnstructuredWriter unstructuredWriter = TextCsvWriterManager
+                    .produceUnstructuredWriter(this.fileFormat,
+                            this.fieldDelimiter, sw);
             Record record = null;
 
             LOG.info(String.format(
@@ -286,22 +308,40 @@ public class OssWriter extends Writer {
             String currentObject = this.object;
             InitiateMultipartUploadRequest currentInitiateMultipartUploadRequest = null;
             InitiateMultipartUploadResult currentInitiateMultipartUploadResult = null;
+            boolean gotData = false;
             List<PartETag> currentPartETags = null;
-            // to do: 可以根据currentPartNumber做分块级别的重试，InitiateMultipartUploadRequest多次一个currentPartNumber会覆盖原有
+            // to do:
+            // 可以根据currentPartNumber做分块级别的重试，InitiateMultipartUploadRequest多次一个currentPartNumber会覆盖原有
             int currentPartNumber = 1;
             try {
                 // warn
                 boolean needInitMultipartTransform = true;
                 while ((record = lineReceiver.getFromReader()) != null) {
+                    gotData = true;
                     // init:begin new multipart upload
                     if (needInitMultipartTransform) {
-                        if (objectSufix == 0) {
-                            currentObject = this.object;
+                        if (objectRollingNumber == 0) {
+                            if (StringUtils.isBlank(this.suffix)) {
+                                currentObject = this.object;
+                            } else {
+                                currentObject = String.format("%s%s",
+                                        this.object, this.suffix);
+                            }
                         } else {
-                            currentObject = String.format("%s_%s", this.object,
-                                    objectSufix);
+                            // currentObject is like(no suffix)
+                            // myfile__9b886b70fbef11e59a3600163e00068c_1
+                            if (StringUtils.isBlank(this.suffix)) {
+                                currentObject = String.format("%s_%s",
+                                        this.object, objectRollingNumber);
+                            } else {
+                                // or with suffix
+                                // myfile__9b886b70fbef11e59a3600163e00068c_1.csv
+                                currentObject = String.format("%s_%s%s",
+                                        this.object, objectRollingNumber,
+                                        this.suffix);
+                            }
                         }
-                        objectSufix++;
+                        objectRollingNumber++;
                         currentInitiateMultipartUploadRequest = new InitiateMultipartUploadRequest(
                                 this.bucket, currentObject);
                         currentInitiateMultipartUploadResult = this.ossClient
@@ -315,10 +355,7 @@ public class OssWriter extends Writer {
 
                         // each object's header
                         if (null != this.header && !this.header.isEmpty()) {
-                            sb.append(UnstructuredStorageWriterUtil
-                                    .doTransportOneRecord(this.header,
-                                            this.fieldDelimiter,
-                                            this.fileFormat));
+                            unstructuredWriter.writeOneRecord(this.header);
                         }
                         // warn
                         needInitMultipartTransform = false;
@@ -326,16 +363,12 @@ public class OssWriter extends Writer {
                     }
 
                     // write: upload data to current object
-                    MutablePair<String, Boolean> transportResult = UnstructuredStorageWriterUtil
-                            .transportOneRecord(record, nullFormat, dateFormat,
-                                    fieldDelimiter, this.fileFormat,
-                                    this.getTaskPluginCollector());
-                    if (!transportResult.getRight()) {
-                        sb.append(transportResult.getLeft());
-                    }
+                    UnstructuredStorageWriterUtil.transportOneRecord(record,
+                            this.nullFormat, this.dateParse,
+                            this.getTaskPluginCollector(), unstructuredWriter);
 
                     if (sb.length() >= partSize) {
-                        this.uploadOnePart(sb, currentPartNumber,
+                        this.uploadOnePart(sw, currentPartNumber,
                                 currentInitiateMultipartUploadResult,
                                 currentPartETags, currentObject);
                         currentPartNumber++;
@@ -346,7 +379,8 @@ public class OssWriter extends Writer {
                     if (currentPartNumber > maxPartNumber) {
                         LOG.info(String
                                 .format("current object [%s] size > %s, complete current multipart upload and begin new one",
-                                        currentObject, currentPartNumber * partSize));
+                                        currentObject, currentPartNumber
+                                                * partSize));
                         CompleteMultipartUploadRequest currentCompleteMultipartUploadRequest = new CompleteMultipartUploadRequest(
                                 this.bucket, currentObject,
                                 currentInitiateMultipartUploadResult
@@ -362,9 +396,21 @@ public class OssWriter extends Writer {
                     }
                 }
 
+                if (!gotData) {
+                    LOG.info("Receive no data from the source.");
+                    currentInitiateMultipartUploadRequest = new InitiateMultipartUploadRequest(
+                            this.bucket, currentObject);
+                    currentInitiateMultipartUploadResult = this.ossClient
+                            .initiateMultipartUpload(currentInitiateMultipartUploadRequest);
+                    currentPartETags = new ArrayList<PartETag>();
+                    // each object's header
+                    if (null != this.header && !this.header.isEmpty()) {
+                        unstructuredWriter.writeOneRecord(this.header);
+                    }
+                }
                 // warn: may be some data stall in sb
                 if (0 < sb.length()) {
-                    this.uploadOnePart(sb, currentPartNumber,
+                    this.uploadOnePart(sw, currentPartNumber,
                             currentInitiateMultipartUploadResult,
                             currentPartETags, currentObject);
                 }
@@ -376,46 +422,58 @@ public class OssWriter extends Writer {
                         .completeMultipartUpload(completeMultipartUploadRequest);
                 LOG.info(String.format("final object etag is:[%s]",
                         completeMultipartUploadResult.getETag()));
-
-            } catch (UnsupportedEncodingException e) {
-                throw DataXException.asDataXException(
-                        OssWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("不支持您配置的编码格式:[%s]", encoding));
-            } catch (OSSException e) {
-                throw DataXException.asDataXException(
-                        OssWriterErrorCode.Write_OBJECT_ERROR, e.getMessage());
-            } catch (ClientException e) {
-                throw DataXException.asDataXException(
-                        OssWriterErrorCode.Write_OBJECT_ERROR, e.getMessage());
             } catch (IOException e) {
+                // 脏数据UnstructuredStorageWriterUtil.transportOneRecord已经记录,header
+                // 都是字符串不认为有脏数据
+                throw DataXException.asDataXException(
+                        OssWriterErrorCode.Write_OBJECT_ERROR, e.getMessage());
+            } catch (Exception e) {
                 throw DataXException.asDataXException(
                         OssWriterErrorCode.Write_OBJECT_ERROR, e.getMessage());
             }
             LOG.info("end do write");
         }
 
-        private void uploadOnePart(StringBuilder sb, int partNumber,
-                InitiateMultipartUploadResult initiateMultipartUploadResult,
-                List<PartETag> partETags, String currentObject)
-                throws IOException, UnsupportedEncodingException {
-            byte[] byteArray = sb.toString().getBytes(this.encoding);
-            InputStream inputStream = new ByteArrayInputStream(byteArray);
-            // 创建UploadPartRequest，上传分块
-            UploadPartRequest uploadPartRequest = new UploadPartRequest();
-            uploadPartRequest.setBucketName(this.bucket);
-            uploadPartRequest.setKey(currentObject);
-            uploadPartRequest.setUploadId(initiateMultipartUploadResult
-                    .getUploadId());
-            uploadPartRequest.setInputStream(inputStream);
-            uploadPartRequest.setPartSize(byteArray.length);
-            uploadPartRequest.setPartNumber(partNumber);
-            UploadPartResult uploadPartResult = this.ossClient
-                    .uploadPart(uploadPartRequest);
-            partETags.add(uploadPartResult.getPartETag());
-            LOG.info(String.format(
-                    "upload part [%s] size [%s] Byte has been completed.",
-                    partNumber, byteArray.length));
-            inputStream.close();
+        /**
+         * 对于同一个UploadID，该号码不但唯一标识这一块数据，也标识了这块数据在整个文件内的相对位置。
+         * 如果你用同一个part号码，上传了新的数据，那么OSS上已有的这个号码的Part数据将被覆盖。
+         * 
+         * @throws Exception
+         * */
+        private void uploadOnePart(
+                final StringWriter sw,
+                final int partNumber,
+                final InitiateMultipartUploadResult initiateMultipartUploadResult,
+                final List<PartETag> partETags, final String currentObject)
+                throws Exception {
+            final String encoding = this.encoding;
+            final String bucket = this.bucket;
+            final OSSClient ossClient = this.ossClient;
+            RetryUtil.executeWithRetry(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    byte[] byteArray = sw.toString().getBytes(encoding);
+                    InputStream inputStream = new ByteArrayInputStream(
+                            byteArray);
+                    // 创建UploadPartRequest，上传分块
+                    UploadPartRequest uploadPartRequest = new UploadPartRequest();
+                    uploadPartRequest.setBucketName(bucket);
+                    uploadPartRequest.setKey(currentObject);
+                    uploadPartRequest.setUploadId(initiateMultipartUploadResult
+                            .getUploadId());
+                    uploadPartRequest.setInputStream(inputStream);
+                    uploadPartRequest.setPartSize(byteArray.length);
+                    uploadPartRequest.setPartNumber(partNumber);
+                    UploadPartResult uploadPartResult = ossClient
+                            .uploadPart(uploadPartRequest);
+                    partETags.add(uploadPartResult.getPartETag());
+                    LOG.info(String
+                            .format("upload part [%s] size [%s] Byte has been completed.",
+                                    partNumber, byteArray.length));
+                    IOUtils.closeQuietly(inputStream);
+                    return true;
+                }
+            }, 3, 1000L, false);
         }
 
         @Override

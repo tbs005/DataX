@@ -12,15 +12,15 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.mongodb.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import org.bson.BsonDocument;
+import org.bson.BsonInt32;
+import org.bson.Document;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
-/**
- * Created by jianying.wcj on 2015/3/19 0019.
- */
 public class MongoDBReader extends Reader {
 
     public static class Job extends Reader.Job {
@@ -38,7 +38,7 @@ public class MongoDBReader extends Reader {
         }
 
         @Override
-        public void init() {
+            public void init() {
             this.originalConfig = super.getPluginJobConf();
                 this.userName = originalConfig.getString(KeyConstant.MONGO_USER_NAME);
                 this.password = originalConfig.getString(KeyConstant.MONGO_USER_PASSWORD);
@@ -69,6 +69,8 @@ public class MongoDBReader extends Reader {
         private String database = null;
         private String collection = null;
 
+        private String query = null;
+
         private JSONArray mongodbColumnMeta = null;
         private Long batchSize = null;
         /**
@@ -89,25 +91,31 @@ public class MongoDBReader extends Reader {
                 throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE,
                         MongoDBReaderErrorCode.ILLEGAL_VALUE.getDescription());
             }
-            DB db = mongoClient.getDB(database);
-            DBCollection col = db.getCollection(this.collection);
-            DBObject obj = new BasicDBObject();
-            obj.put(KeyConstant.MONGO_PRIMIARY_ID_META,1);
+            MongoDatabase db = mongoClient.getDatabase(database);
+            MongoCollection col = db.getCollection(this.collection);
+            BsonDocument sort = new BsonDocument();
+            sort.append(KeyConstant.MONGO_PRIMIARY_ID_META, new BsonInt32(1));
 
             long pageCount = batchSize / pageSize;
-            long modCount = batchSize % pageSize;
+            int modCount = (int)(batchSize % pageSize);
 
             for(int i = 0; i <= pageCount; i++) {
-                skipCount += i * pageSize;
                 if(modCount == 0 && i == pageCount) {
                     break;
                 }
                 if (i == pageCount) {
-                        pageCount = modCount;
+                    pageSize = modCount;
                 }
-                DBCursor dbCursor = col.find().sort(obj).skip(skipCount.intValue()).limit(pageSize);
+                MongoCursor<Document> dbCursor = null;
+                if(!Strings.isNullOrEmpty(query)) {
+                    dbCursor = col.find(BsonDocument.parse(query)).sort(sort)
+                            .skip(skipCount.intValue()).limit(pageSize).iterator();
+                } else {
+                    dbCursor = col.find().sort(sort)
+                            .skip(skipCount.intValue()).limit(pageSize).iterator();
+                }
                 while (dbCursor.hasNext()) {
-                    DBObject item = dbCursor.next();
+                    Document item = dbCursor.next();
                     Record record = recordSender.createRecord();
                     Iterator columnItera = mongodbColumnMeta.iterator();
                     while (columnItera.hasNext()) {
@@ -144,6 +152,7 @@ public class MongoDBReader extends Reader {
                     }
                     recordSender.sendToWriter(record);
                 }
+                skipCount += pageSize;
             }
         }
 
@@ -160,6 +169,7 @@ public class MongoDBReader extends Reader {
             }
             
             this.collection = readerSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
+            this.query = readerSliceConfig.getString(KeyConstant.MONGO_QUERY);
             this.mongodbColumnMeta = JSON.parseArray(readerSliceConfig.getString(KeyConstant.MONGO_COLUMN));
             this.batchSize = readerSliceConfig.getLong(KeyConstant.BATCH_SIZE);
             this.skipCount = readerSliceConfig.getLong(KeyConstant.SKIP_COUNT);

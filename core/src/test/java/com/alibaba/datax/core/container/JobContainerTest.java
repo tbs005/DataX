@@ -2,7 +2,6 @@ package com.alibaba.datax.core.container;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.JobContainer;
-import com.alibaba.datax.core.job.meta.ExecuteMode;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
@@ -10,6 +9,8 @@ import com.alibaba.datax.core.statistics.container.communicator.AbstractContaine
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +30,7 @@ public class JobContainerTest extends CaseInitializer {
                 .getResource(".").getFile();
 
         this.configuration = ConfigParser.parse(path + File.separator
-                + "all.json");
+                + "all0.json");
         LoadUtil.bind(this.configuration);
     }
 

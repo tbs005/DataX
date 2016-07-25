@@ -1,8 +1,5 @@
 package com.alibaba.datax.plugin.writer.mongodbwriter;
 
-/**
- * Created by jianying.wcj on 2015/3/17 0017.
- */
 public class KeyConstant {
     /**
      * mongodb 的 host 地址
@@ -12,6 +9,10 @@ public class KeyConstant {
      * 数组类型
      */
     public static final String ARRAY_TYPE = "array";
+    /**
+     * ObjectId类型
+     */
+    public static final String OBJECT_ID_TYPE = "objectid";
     /**
      * mongodb 的用户名
      */
@@ -51,15 +52,15 @@ public class KeyConstant {
     /**
      * 数据更新列信息
      */
-    public static final String UPSERT_INFO = "upsertInfo";
+    public static final String WRITE_MODE = "writeMode";
     /**
      * 有相同的记录是否覆盖，默认为false
      */
-    public static final String IS_UPSERT = "isUpsert";
+    public static final String IS_REPLACE = "isReplace";
     /**
      * 指定用来判断是否覆盖的 业务主键
      */
-    public static final String UNIQUE_KEY = "upsertKey";
+    public static final String UNIQUE_KEY = "replaceKey";
     /**
      * 判断是否为数组类型
      * @param type 数据类型
@@ -67,6 +68,14 @@ public class KeyConstant {
      */
     public static boolean isArrayType(String type) {
         return ARRAY_TYPE.equals(type);
+    }
+    /**
+     * 判断是否为ObjectId类型
+     * @param type 数据类型
+     * @return
+     */
+    public static boolean isObjectIdType(String type) {
+        return OBJECT_ID_TYPE.equals(type);
     }
     /**
      * 判断一个值是否为true

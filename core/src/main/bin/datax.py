@@ -8,30 +8,22 @@ import subprocess
 import time
 import re
 import socket
-import json
 from optparse import OptionParser
 from optparse import OptionGroup
 from string import Template
-import codecs
-import platform
-
-def isWindows():
-    return platform.system() == 'Windows'
 
 DATAX_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-DATAX_VERSION = 'DATAX-OPENSOURCE-1.0'
-if isWindows():
-    codecs.register(lambda name: name == 'cp65001' and codecs.lookup('utf-8') or None)
-    CLASS_PATH = ("%s/lib/*") % (DATAX_HOME)
-else:
-    CLASS_PATH = ("%s/lib/*:.") % (DATAX_HOME)
+DATAX_VERSION = 'UNKNOWN_DATAX_VERSION'
+CLASS_PATH = ("%s/lib/*:.") % (DATAX_HOME)
 LOGBACK_FILE = ("%s/conf/logback.xml") % (DATAX_HOME)
 DEFAULT_JVM = "-Xms1g -Xmx1g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/log" % (DATAX_HOME)
-DEFAULT_PROPERTY_CONF = "-Dfile.encoding=UTF-8 -Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener -Ddatax.home=%s -Dlogback.configurationFile=%s" % (
+DEFAULT_PROPERTY_CONF = "-Dfile.encoding=UTF-8 -Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener -Djava.security.egd=file:///dev/urandom -Ddatax.home=%s -Dlogback.configurationFile=%s" % (
     DATAX_HOME, LOGBACK_FILE)
 ENGINE_COMMAND = "java -server ${jvm} %s -classpath %s  ${params} com.alibaba.datax.core.Engine -mode ${mode} -jobid ${jobid} -job ${job}" % (
     DEFAULT_PROPERTY_CONF, CLASS_PATH)
+WAPPER_BULKLOAD_COMMAND = "java -server %s %s -classpath %s com.alibaba.datax.core.WapperHbaseBulk " % (
+    DEFAULT_JVM, DEFAULT_PROPERTY_CONF, CLASS_PATH)
 REMOTE_DEBUG_CONFIG = "-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=9999"
 
 RET_STATE = {
@@ -63,11 +55,10 @@ def suicide(signum, e):
 
 
 def register_signal():
-    if not isWindows():
-        global child_process
-        signal.signal(2, suicide)
-        signal.signal(3, suicide)
-        signal.signal(15, suicide)
+    global child_process
+    signal.signal(2, suicide)
+    signal.signal(3, suicide)
+    signal.signal(15, suicide)
 
 
 def getOptionParser():
@@ -88,15 +79,8 @@ def getOptionParser():
     prodEnvOptionGroup.add_option("-p", "--params", metavar="<parameter used in job config>",
                                   action="store", dest="params",
                                   help='Set job parameter, eg: the source tableName you want to set it by command, '
-                                       'then you can use like this: -p"-DtableName=your-table-name", '
-                                       'if you have mutiple parameters: -p"-DtableName=your-table-name -DcolumnName=your-column-name".'
+                                       'then you can use like this: -v"-DtableName=you-wanted-table-name". '
                                        'Note: you should config in you job tableName with ${tableName}.')
-    prodEnvOptionGroup.add_option("-r", "--reader", metavar="<parameter used in view job config[reader] template>",
-                                  action="store", dest="reader",type="string",
-                                  help='View job config[reader] template, eg: mysqlreader,streamreader')
-    prodEnvOptionGroup.add_option("-w", "--writer", metavar="<parameter used in view job config[writer] template>",
-                                  action="store", dest="writer",type="string",
-                                  help='View job config[writer] template, eg: mysqlwriter,streamwriter')
     parser.add_option_group(prodEnvOptionGroup)
 
     devEnvOptionGroup = OptionGroup(parser, "Develop/Debug Options",
@@ -105,48 +89,11 @@ def getOptionParser():
                                  help="Set to remote debug mode.")
     devEnvOptionGroup.add_option("--loglevel", metavar="<log level>", dest="loglevel", action="store",
                                  default="info", help="Set log level such as: debug, info, all etc.")
+    prodEnvOptionGroup.add_option("--wapper_bulkload", metavar="<wapper for hbasebulkload>", dest="wapper_bulkload", action="store", default="false",
+                                  help="Wapper for hbaseBulkload.")
     parser.add_option_group(devEnvOptionGroup)
     return parser
 
-def generateJobConfigTemplate(reader, writer):
-    readerRef = "Please refer to the %s document:\n     https://github.com/alibaba/DataX/blob/master/%s/doc/%s.md \n" % (reader,reader,reader)
-    writerRef = "Please refer to the %s document:\n     https://github.com/alibaba/DataX/blob/master/%s/doc/%s.md \n " % (writer,writer,writer)
-    print readerRef
-    print writerRef
-    jobGuid = 'Please save the following configuration as a json file and  use\n     python {DATAX_HOME}/bin/datax.py {JSON_FILE_NAME}.json \nto run the job.\n'
-    print jobGuid
-    jobTemplate={
-      "job": {
-        "setting": {
-          "speed": {
-            "channel": ""
-          }
-        },
-        "content": [
-          {
-            "reader": {},
-            "writer": {}
-          }
-        ]
-      }
-    }
-    readerTemplatePath = "%s/plugin/reader/%s/plugin_job_template.json" % (DATAX_HOME,reader)
-    writerTemplatePath = "%s/plugin/writer/%s/plugin_job_template.json" % (DATAX_HOME,writer)
-    try:
-      readerPar = readPluginTemplate(readerTemplatePath);
-    except Exception, e:
-       print "Read reader[%s] template error: can\'t find file %s" % (reader,readerTemplatePath)
-    try:
-      writerPar = readPluginTemplate(writerTemplatePath);
-    except Exception, e:
-      print "Read writer[%s] template error: : can\'t find file %s" % (writer,writerTemplatePath)
-    jobTemplate['job']['content'][0]['reader'] = readerPar;
-    jobTemplate['job']['content'][0]['writer'] = writerPar;
-    print json.dumps(jobTemplate, indent=4, sort_keys=True)
-
-def readPluginTemplate(plugin):
-    with open(plugin, 'r') as f:
-            return json.load(f)
 
 def isUrl(path):
     if not path:
@@ -210,14 +157,16 @@ if __name__ == "__main__":
     printCopyright()
     parser = getOptionParser()
     options, args = parser.parse_args(sys.argv[1:])
-    if options.reader is not None and options.writer is not None:
-        generateJobConfigTemplate(options.reader,options.writer)
-        sys.exit(RET_STATE['OK'])
-    if len(args) != 1:
-        parser.print_help()
-        sys.exit(RET_STATE['FAIL'])
 
-    startCommand = buildStartCommand(options, args)
+    # bulkload的wapper,如果不能解析到env,再到这里增加参数,包括调度的jobID以及bulkLoad参数
+    if options.wapper_bulkload.lower().strip() == "true":
+        startCommand = WAPPER_BULKLOAD_COMMAND
+    else:
+        if len(args) != 1:
+            parser.print_help()
+            sys.exit(RET_STATE['FAIL'])
+        startCommand = buildStartCommand(options, args)
+
     # print startCommand
 
     child_process = subprocess.Popen(startCommand, shell=True)

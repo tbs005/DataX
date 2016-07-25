@@ -15,11 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.plugin.reader.ftpreader.FtpReader.Job;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 
 public class StandardFtpHelper extends FtpHelper {
-	private static final Logger LOG = LoggerFactory.getLogger(Job.class);
+	private static final Logger LOG = LoggerFactory.getLogger(StandardFtpHelper.class);
 	FTPClient ftpClient = null;
 
 	@Override

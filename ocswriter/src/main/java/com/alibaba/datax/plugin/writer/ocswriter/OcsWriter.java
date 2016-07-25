@@ -26,12 +26,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Time:    2015-05-06 16:01
- * 1，控制速度
- * 2、MemcachedClient长连接长时间不写入数据可能会被server强行关闭
- * 3、以后支持json格式的value
- */
 public class OcsWriter extends Writer {
 
     public static class Job extends Writer.Job {

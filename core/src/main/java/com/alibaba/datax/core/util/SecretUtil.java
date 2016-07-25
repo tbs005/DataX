@@ -267,7 +267,7 @@ public class SecretUtil {
 
     public static synchronized Properties getSecurityProperties() {
         if (properties == null) {
-            InputStream secretStream;
+            InputStream secretStream = null;
             try {
                 secretStream = new FileInputStream(
                         CoreConstant.DATAX_SECRET_PATH);

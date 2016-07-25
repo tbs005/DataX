@@ -14,4 +14,6 @@ public class Constant {
 	
 	//每个分块10MB，最大10000个分块
 	public static final Long MAX_FILE_SIZE = 1024 * 1024 * 10 * 10000L;
+	
+	public static final String DEFAULT_SUFFIX = "";
 }

@@ -45,6 +45,7 @@ public abstract class HbaseAbstractTask {
 
     public void prepare() throws Exception {
         this.scan = new Scan();
+        this.scan.setSmall(false);
         scan.setCacheBlocks(false);
 
         this.scan.setStartRow(startKey);

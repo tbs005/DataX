@@ -7,8 +7,8 @@ import org.junit.BeforeClass;
 import java.io.File;
 
 public class CaseInitializer {
-	@BeforeClass
-	public static void beforeClass() {
+    @BeforeClass
+    public static void beforeClass() {
         CoreConstant.DATAX_HOME = CaseInitializer.class.getClassLoader()
                 .getResource(".").getFile();
 
@@ -16,24 +16,32 @@ public class CaseInitializer {
                 CoreConstant.DATAX_HOME, "conf", "core.json"}, File.separator);
 
         CoreConstant.DATAX_CONF_LOG_PATH = StringUtils.join(
-                new String[] { CoreConstant.DATAX_HOME, "conf", "logback.xml" }, File.separator);
+                new String[]{CoreConstant.DATAX_HOME, "conf", "logback.xml"}, File.separator);
 
         CoreConstant.DATAX_PLUGIN_HOME = StringUtils.join(
-                new String[] { CoreConstant.DATAX_HOME, "plugin" }, File.separator);
+                new String[]{CoreConstant.DATAX_HOME, "plugin"}, File.separator);
 
         CoreConstant.DATAX_PLUGIN_READER_HOME = StringUtils.join(
-                new String[] { CoreConstant.DATAX_HOME, "plugin", "reader" }, File.separator);
+                new String[]{CoreConstant.DATAX_HOME, "plugin", "reader"}, File.separator);
 
         CoreConstant.DATAX_PLUGIN_WRITER_HOME = StringUtils.join(
-                new String[] { CoreConstant.DATAX_HOME, "plugin", "writer" }, File.separator);
+                new String[]{CoreConstant.DATAX_HOME, "plugin", "writer"}, File.separator);
 
-        CoreConstant.DATAX_BIN_HOME = StringUtils.join(new String[] {
-                CoreConstant.DATAX_HOME, "bin" }, File.separator);
+        CoreConstant.DATAX_BIN_HOME = StringUtils.join(new String[]{
+                CoreConstant.DATAX_HOME, "bin"}, File.separator);
 
-        CoreConstant.DATAX_JOB_HOME = StringUtils.join(new String[] {
-                CoreConstant.DATAX_HOME, "job" }, File.separator);
+        CoreConstant.DATAX_JOB_HOME = StringUtils.join(new String[]{
+                CoreConstant.DATAX_HOME, "job"}, File.separator);
 
-        CoreConstant.DATAX_SECRET_PATH = StringUtils.join(new String[] {
+        CoreConstant.DATAX_SECRET_PATH = StringUtils.join(new String[]{
                 CoreConstant.DATAX_HOME, "conf", ".secret.properties"}, File.separator);
-	}
+        CoreConstant.DATAX_STORAGE_TRANSFORMER_HOME = StringUtils.join(
+                new String[]{CoreConstant.DATAX_HOME, "local_storage", "transformer"}, File.separator);
+
+        CoreConstant.DATAX_STORAGE_PLUGIN_READ_HOME = StringUtils.join(
+                new String[]{CoreConstant.DATAX_HOME, "local_storage", "plugin", "reader"}, File.separator);
+
+        CoreConstant.DATAX_STORAGE_PLUGIN_WRITER_HOME = StringUtils.join(
+                new String[]{CoreConstant.DATAX_HOME, "local_storage", "plugin", "writer"}, File.separator);
+    }
 }

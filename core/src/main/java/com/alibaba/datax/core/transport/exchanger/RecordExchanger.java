@@ -19,15 +19,20 @@ package com.alibaba.datax.core.transport.exchanger;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.core.util.container.CoreConstant;
-import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
+import com.alibaba.datax.core.transport.transformer.TransformerExecution;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.container.CoreConstant;
 
-public class RecordExchanger implements RecordSender, RecordReceiver {
+import java.util.List;
+
+public class RecordExchanger extends TransformerExchanger implements RecordSender, RecordReceiver {
 
 	private Channel channel;
 
@@ -38,7 +43,8 @@ public class RecordExchanger implements RecordSender, RecordReceiver {
 	private volatile boolean shutdown = false;
 
 	@SuppressWarnings("unchecked")
-	public RecordExchanger(final Channel channel) {
+	public RecordExchanger(final int taskGroupId, final int taskId,final Channel channel, final Communication communication,List<TransformerExecution> transformerExecs, final TaskPluginCollector pluginCollector) {
+		super(taskGroupId,taskId,communication,transformerExecs, pluginCollector);
 		assert channel != null;
 		this.channel = channel;
 		this.configuration = channel.getConfiguration();
@@ -77,7 +83,13 @@ public class RecordExchanger implements RecordSender, RecordReceiver {
 		if(shutdown){
 			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
 		}
+		record = doTransformer(record);
+		if (record == null) {
+			return;
+		}
 		this.channel.push(record);
+		//和channel的统计保持同步
+		doStat();
 	}
 
 	@Override
@@ -90,6 +102,8 @@ public class RecordExchanger implements RecordSender, RecordReceiver {
 			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
 		}
 		this.channel.pushTerminate(TerminateRecord.get());
+		//和channel的统计保持同步
+		doStat();
 	}
 
 	@Override

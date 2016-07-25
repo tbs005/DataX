@@ -30,7 +30,7 @@ public final class CommunicationTool {
     public static final String WRITE_FAILED_RECORDS = "writeFailedRecords";
     public static final String WRITE_FAILED_BYTES = "writeFailedBytes";
 
-    private static final String TOTAL_READ_RECORDS = "totalReadRecords";
+    public static final String TOTAL_READ_RECORDS = "totalReadRecords";
     private static final String TOTAL_READ_BYTES = "totalReadBytes";
 
     private static final String TOTAL_ERROR_RECORDS = "totalErrorRecords";
@@ -42,6 +42,12 @@ public final class CommunicationTool {
     public static final String WAIT_WRITER_TIME = "waitWriterTime";
 
     public static final String WAIT_READER_TIME = "waitReaderTime";
+
+    public static final String TRANSFORMER_USED_TIME = "totalTransformerUsedTime";
+    public static final String TRANSFORMER_SUCCEED_RECORDS = "totalTransformerSuccessRecords";
+    public static final String TRANSFORMER_FAILED_RECORDS = "totalTransformerFailedRecords";
+    public static final String TRANSFORMER_FILTER_RECORDS = "totalTransformerFilterRecords";
+    public static final String TRANSFORMER_NAME_PREFIX = "usedTimeByTransformer_";
 
     public static Communication getReportCommunication(Communication now, Communication old, int totalStage) {
         Validate.isTrue(now != null && old != null,
@@ -124,6 +130,23 @@ public final class CommunicationTool {
             sb.append(" All Task WaitReaderTime ");
             sb.append(PerfTrace.unitTime(communication.getLongCounter(WAIT_READER_TIME)));
             sb.append(" | ");
+            if (communication.getLongCounter(CommunicationTool.TRANSFORMER_USED_TIME) > 0
+                    || communication.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS) > 0
+                    ||communication.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS) > 0
+                    || communication.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS) > 0) {
+                sb.append("Transfermor Success ");
+                sb.append(String.format("%d records", communication.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS)));
+                sb.append(" | ");
+                sb.append("Transformer Error ");
+                sb.append(String.format("%d records", communication.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS)));
+                sb.append(" | ");
+                sb.append("Transformer Filter ");
+                sb.append(String.format("%d records", communication.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS)));
+                sb.append(" | ");
+                sb.append("Transformer usedTime ");
+                sb.append(PerfTrace.unitTime(communication.getLongCounter(CommunicationTool.TRANSFORMER_USED_TIME)));
+                sb.append(" | ");
+            }
             sb.append("Percentage ");
             sb.append(getPercentage(communication));
             return sb.toString();

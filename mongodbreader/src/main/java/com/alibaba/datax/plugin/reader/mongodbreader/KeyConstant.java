@@ -1,8 +1,5 @@
 package com.alibaba.datax.plugin.reader.mongodbreader;
 
-/**
- * Created by jianying.wcj on 2015/3/17 0017.
- */
 public class KeyConstant {
     /**
      * 数组类型
@@ -28,6 +25,10 @@ public class KeyConstant {
      * mongodb 集合名
      */
     public static final String MONGO_COLLECTION_NAME = "collectionName";
+    /**
+     * mongodb 查询条件
+     */
+    public static final String MONGO_QUERY = "query";
     /**
      * mongodb 的列
      */

@@ -3,6 +3,7 @@ package com.alibaba.datax.common.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.*;
 
 public final class RetryUtil {
@@ -26,7 +27,27 @@ public final class RetryUtil {
                                          long sleepTimeInMilliSecond,
                                          boolean exponential) throws Exception {
         Retry retry = new Retry();
-        return retry.doRetry(callable, retryTimes, sleepTimeInMilliSecond, exponential);
+        return retry.doRetry(callable, retryTimes, sleepTimeInMilliSecond, exponential, null);
+    }
+    
+    /**
+     * 重试次数工具方法.
+     *
+     * @param callable               实际逻辑
+     * @param retryTimes             最大重试次数（>1）
+     * @param sleepTimeInMilliSecond 运行失败后休眠对应时间再重试
+     * @param exponential            休眠时间是否指数递增
+     * @param <T>                    返回值类型
+     * @param retryExceptionClasss   出现指定的异常类型时才进行重试
+     * @return 经过重试的callable的执行结果
+     */
+    public static <T> T executeWithRetry(Callable<T> callable,
+                                         int retryTimes,
+                                         long sleepTimeInMilliSecond,
+                                         boolean exponential,
+                                         List<Class<?>> retryExceptionClasss) throws Exception {
+        Retry retry = new Retry();
+        return retry.doRetry(callable, retryTimes, sleepTimeInMilliSecond, exponential, retryExceptionClasss);
     }
 
     /**
@@ -51,7 +72,7 @@ public final class RetryUtil {
                                               long timeoutMs,
                                               ThreadPoolExecutor executor) throws Exception {
         Retry retry = new AsyncRetry(timeoutMs, executor);
-        return retry.doRetry(callable, retryTimes, sleepTimeInMilliSecond, exponential);
+        return retry.doRetry(callable, retryTimes, sleepTimeInMilliSecond, exponential, null);
     }
 
     /**
@@ -72,7 +93,7 @@ public final class RetryUtil {
 
     private static class Retry {
 
-        public <T> T doRetry(Callable<T> callable, int retryTimes, long sleepTimeInMilliSecond, boolean exponential)
+        public <T> T doRetry(Callable<T> callable, int retryTimes, long sleepTimeInMilliSecond, boolean exponential, List<Class<?>> retryExceptionClasss)
                 throws Exception {
 
             if (null == callable) {
@@ -90,7 +111,23 @@ public final class RetryUtil {
                     return call(callable);
                 } catch (Exception e) {
                     saveException = e;
-
+                    if (i == 0) {
+                        LOG.error(String.format("Exception when calling callable, 异常Msg:%s", saveException.getMessage()), saveException);
+                    }
+                    
+                    if (null != retryExceptionClasss && !retryExceptionClasss.isEmpty()) {
+                        boolean needRetry = false;
+                        for (Class<?> eachExceptionClass : retryExceptionClasss) {
+                            if (eachExceptionClass == e.getClass()) {
+                                needRetry = true;
+                                break;
+                            }
+                        }
+                        if (!needRetry) {
+                            throw saveException;
+                        }
+                    }
+                    
                     if (i + 1 < retryTimes && sleepTimeInMilliSecond > 0) {
                         long startTime = System.currentTimeMillis();
 

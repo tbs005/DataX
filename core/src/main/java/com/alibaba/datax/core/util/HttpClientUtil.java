@@ -119,7 +119,9 @@ public class HttpClientUtil {
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                 System.err.println("请求地址：" + httpRequestBase.getURI() + ", 请求方法：" + httpRequestBase.getMethod()
                         + ",STATUS CODE = " + response.getStatusLine().getStatusCode());
-
+                if (httpRequestBase != null) {
+                    httpRequestBase.abort();
+                }
                 throw new Exception("Response Status Code : " + response.getStatusLine().getStatusCode());
             } else {
                 HttpEntity entity = response.getEntity();

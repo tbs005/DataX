@@ -1,9 +1,9 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.job.meta.State;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 
 import java.util.List;
 

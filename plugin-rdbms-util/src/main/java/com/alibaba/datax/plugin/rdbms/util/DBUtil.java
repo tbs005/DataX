@@ -7,12 +7,14 @@ import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.druid.sql.parser.SQLParserUtils;
 import com.alibaba.druid.sql.parser.SQLStatementParser;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -69,7 +71,8 @@ public final class DBUtil {
                     throw new Exception("DataX无法连接对应的数据库，可能原因是：1) 配置的ip/port/database/jdbc错误，无法连接。2) 配置的username/password错误，鉴权失败。请和DBA确认该数据库的连接信息是否正确。");
 //                    throw new Exception(DBUtilErrorCode.JDBC_NULL.toString());
                 }
-            }, 3, 1000L, true);
+            }, 7, 1000L, true);
+            //warn: 7 means 2 minutes
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     DBUtilErrorCode.CONN_DB_ERROR,
@@ -353,6 +356,21 @@ public final class DBUtil {
 
     private static synchronized Connection connect(DataBaseType dataBaseType,
                                                    String url, String user, String pass, String socketTimeout) {
+
+        //ob10的处理
+        if (url.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING) && dataBaseType == DataBaseType.MySql) {
+            String[] ss = url.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);
+            if (ss.length != 3) {
+                throw DataXException
+                        .asDataXException(
+                                DBUtilErrorCode.JDBC_OB10_ADDRESS_ERROR, "JDBC OB10格式错误，请联系askdatax");
+            }
+            LOG.info("this is ob1_0 jdbc url.");
+            user = ss[1].trim() +":"+user;
+            url = ss[2];
+            LOG.info("this is ob1_0 jdbc url. user="+user+" :url="+url);
+        }
+
         Properties prop = new Properties();
         prop.put("user", user);
         prop.put("password", pass);
@@ -759,6 +777,27 @@ public final class DBUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     DBUtilErrorCode.RS_ASYNC_ERROR, "异步获取ResultSet失败", e);
+        }
+    }
+    
+    public static void loadDriverClass(String pluginType, String pluginName) {
+        try {
+            String pluginJsonPath = StringUtils.join(
+                    new String[] { System.getProperty("datax.home"), "plugin",
+                            pluginType,
+                            String.format("%s%s", pluginName, pluginType),
+                            "plugin.json" }, File.separator);
+            Configuration configuration = Configuration.from(new File(
+                    pluginJsonPath));
+            List<String> drivers = configuration.getList("drivers",
+                    String.class);
+            for (String driver : drivers) {
+                Class.forName(driver);
+            }
+        } catch (ClassNotFoundException e) {
+            throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
+                    "数据库驱动加载错误, 请确认libs目录有驱动jar包且plugin.json中drivers配置驱动类正确!",
+                    e);
         }
     }
 }
