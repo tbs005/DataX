@@ -52,7 +52,7 @@ HdfsReader实现了从Hadoop分布式文件系统Hdfs中读取文件数据并转
                     "name": "hdfsreader",
                     "parameter": {
                         "path": "/user/hive/warehouse/mytable01/*",
-                        "defaultFS": "hdfs://10.101.169.107:9000",
+                        "defaultFS": "hdfs://xxx:port",
                         "column": [
                                {
                                 "index": 0,

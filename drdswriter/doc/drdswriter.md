@@ -247,7 +247,7 @@ CREATE TABLE `t_job` (
    project_id: 112
 pipeline_name: jcs_project_128105
  execute_name: NULL
-      context: {"configuration":{"reader":{"parameter":{"*password":"NTdjMknTWnAlCCyaG3EVQg==","column":"`pugId`,`gmtCreated`,`gmtModified`,`gmtAuthTime`,`gmtLeaveTime`,`merchantId`,`token`,`mac`,`os`,`oauth`,`oauthInfo`","database":"witown","error-limit":"1","ip":"rdsyi7biayi7bia.mysql.rds.aliyuncs.com","port":"3306","table":"wi_pug_106","username":"rnd","where":""},"plugin":"mysql"},"writer":{"parameter":{"*access-key":"+oN7h69a9T64z1fas0CNDWmVeSsIF4i5a8s8HA5HNjo=","access-id":"IlUQ8E7i3CFFbGax","error-limit":"1","partition":"","project":"witown_rds","table":"wi_pug_106"},"plugin":"odps"}},"type":"datax"}
+      context: {"configuration":{"reader":{"parameter":{"*password":"","column":"`pugId`,`gmtCreated`,`gmtModified`,`gmtAuthTime`,`gmtLeaveTime`,`merchantId`,`token`,`mac`,`os`,`oauth`,`oauthInfo`","database":"witown","error-limit":"1","ip":"","port":"3306","table":"wi_pug_106","username":"","where":""},"plugin":"mysql"},"writer":{"parameter":{"*access-key":"+oN7h69a9T64z1fas0CNDWmVeSsIF4i5a8s8HA5HNjo=","access-id":"IlUQ8E7i3CFFbGax","error-limit":"1","partition":"","project":"witown_rds","table":"wi_pug_106"},"plugin":"odps"}},"type":"datax"}
      trace_id: NULL
   submit_user: 128105
   submit_time: 2014-12-12 11:36:27

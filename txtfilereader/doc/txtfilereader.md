@@ -22,7 +22,7 @@ TxtFileReader实现了从本地文件读取数据并转为DataX协议的功能�
 
 4. 支持递归读取、支持文件名过滤。
 
-5. 支持文本压缩，现有压缩格式为zip、lzo、lzop、tgz、bzip2。
+5. 支持文本压缩，现有压缩格式为zip、gzip、bzip2。
 
 6. 多个File可以支持并发读取。
 
@@ -154,7 +154,7 @@ TxtFileReader实现了从本地文件读取数据并转为DataX协议的功能�
 
 * **compress**
 
-	* 描述：文本压缩类型，默认不填写意味着没有压缩。支持压缩类型为gzip、bzip2。 <br />
+	* 描述：文本压缩类型，默认不填写意味着没有压缩。支持压缩类型为zip、gzip、bzip2。 <br />
 
 	* 必选：否 <br />
 
