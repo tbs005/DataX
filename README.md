@@ -50,4 +50,3 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 钉钉用户请扫描以下二维码进行讨论：
 
 ![DataX-OpenSource-Dingding](https://github.com/alibaba/DataX/blob/master/images/datax-opensource-dingding.png)
-View
