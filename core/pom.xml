@@ -63,12 +63,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.alibaba.datax</groupId>
-            <artifactId>datax-service-face</artifactId>
-            <version>1.0.23-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>

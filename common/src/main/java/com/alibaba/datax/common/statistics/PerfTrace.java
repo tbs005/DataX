@@ -3,7 +3,6 @@ package com.alibaba.datax.common.statistics;
 import com.alibaba.datax.common.statistics.PerfRecord.PHASE;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.HostUtils;
-import com.alibaba.datax.dataxservice.face.domain.JobStatisticsDto2;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -594,6 +593,315 @@ public class PerfTrace {
 
         public int getTotalCount() {
             return totalCount;
+        }
+    }
+    class JobStatisticsDto2 {
+
+        private Long id;
+        private Date gmtCreate;
+        private Date gmtModified;
+        private Long instId;
+        private Long jobId;
+        private Long jobVersion;
+        private Integer taskGroupId;
+        private Date windowStart;
+        private Date windowEnd;
+        private Date jobStartTime;
+        private Date jobEndTime;
+        private Long jobRunTimeMs;
+        private Integer jobPriority;
+        private Integer channelNum;
+        private String cluster;
+        private String jobDomain;
+        private String srcType;
+        private String dstType;
+        private String srcGuid;
+        private String dstGuid;
+        private Long records;
+        private Long bytes;
+        private Long speedRecord;
+        private Long speedByte;
+        private String stagePercent;
+        private Long errorRecord;
+        private Long errorBytes;
+        private Long waitReadTimeMs;
+        private Long waitWriteTimeMs;
+        private Long odpsBlockCloseTimeMs;
+        private Long sqlQueryTimeMs;
+        private Long resultNextTimeMs;
+        private Long taskTotalTimeMs;
+        private String hostAddress;
+
+        public Long getId() {
+            return id;
+        }
+
+        public Date getGmtCreate() {
+            return gmtCreate;
+        }
+
+        public Date getGmtModified() {
+            return gmtModified;
+        }
+
+        public Long getInstId() {
+            return instId;
+        }
+
+        public Long getJobId() {
+            return jobId;
+        }
+
+        public Long getJobVersion() {
+            return jobVersion;
+        }
+
+        public Integer getTaskGroupId() {
+            return taskGroupId;
+        }
+
+        public Date getWindowStart() {
+            return windowStart;
+        }
+
+        public Date getWindowEnd() {
+            return windowEnd;
+        }
+
+        public Date getJobStartTime() {
+            return jobStartTime;
+        }
+
+        public Date getJobEndTime() {
+            return jobEndTime;
+        }
+
+        public Long getJobRunTimeMs() {
+            return jobRunTimeMs;
+        }
+
+        public Integer getJobPriority() {
+            return jobPriority;
+        }
+
+        public Integer getChannelNum() {
+            return channelNum;
+        }
+
+        public String getCluster() {
+            return cluster;
+        }
+
+        public String getJobDomain() {
+            return jobDomain;
+        }
+
+        public String getSrcType() {
+            return srcType;
+        }
+
+        public String getDstType() {
+            return dstType;
+        }
+
+        public String getSrcGuid() {
+            return srcGuid;
+        }
+
+        public String getDstGuid() {
+            return dstGuid;
+        }
+
+        public Long getRecords() {
+            return records;
+        }
+
+        public Long getBytes() {
+            return bytes;
+        }
+
+        public Long getSpeedRecord() {
+            return speedRecord;
+        }
+
+        public Long getSpeedByte() {
+            return speedByte;
+        }
+
+        public String getStagePercent() {
+            return stagePercent;
+        }
+
+        public Long getErrorRecord() {
+            return errorRecord;
+        }
+
+        public Long getErrorBytes() {
+            return errorBytes;
+        }
+
+        public Long getWaitReadTimeMs() {
+            return waitReadTimeMs;
+        }
+
+        public Long getWaitWriteTimeMs() {
+            return waitWriteTimeMs;
+        }
+
+        public Long getOdpsBlockCloseTimeMs() {
+            return odpsBlockCloseTimeMs;
+        }
+
+        public Long getSqlQueryTimeMs() {
+            return sqlQueryTimeMs;
+        }
+
+        public Long getResultNextTimeMs() {
+            return resultNextTimeMs;
+        }
+
+        public Long getTaskTotalTimeMs() {
+            return taskTotalTimeMs;
+        }
+
+        public String getHostAddress() {
+            return hostAddress;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public void setGmtCreate(Date gmtCreate) {
+            this.gmtCreate = gmtCreate;
+        }
+
+        public void setGmtModified(Date gmtModified) {
+            this.gmtModified = gmtModified;
+        }
+
+        public void setInstId(Long instId) {
+            this.instId = instId;
+        }
+
+        public void setJobId(Long jobId) {
+            this.jobId = jobId;
+        }
+
+        public void setJobVersion(Long jobVersion) {
+            this.jobVersion = jobVersion;
+        }
+
+        public void setTaskGroupId(Integer taskGroupId) {
+            this.taskGroupId = taskGroupId;
+        }
+
+        public void setWindowStart(Date windowStart) {
+            this.windowStart = windowStart;
+        }
+
+        public void setWindowEnd(Date windowEnd) {
+            this.windowEnd = windowEnd;
+        }
+
+        public void setJobStartTime(Date jobStartTime) {
+            this.jobStartTime = jobStartTime;
+        }
+
+        public void setJobEndTime(Date jobEndTime) {
+            this.jobEndTime = jobEndTime;
+        }
+
+        public void setJobRunTimeMs(Long jobRunTimeMs) {
+            this.jobRunTimeMs = jobRunTimeMs;
+        }
+
+        public void setJobPriority(Integer jobPriority) {
+            this.jobPriority = jobPriority;
+        }
+
+        public void setChannelNum(Integer channelNum) {
+            this.channelNum = channelNum;
+        }
+
+        public void setCluster(String cluster) {
+            this.cluster = cluster;
+        }
+
+        public void setJobDomain(String jobDomain) {
+            this.jobDomain = jobDomain;
+        }
+
+        public void setSrcType(String srcType) {
+            this.srcType = srcType;
+        }
+
+        public void setDstType(String dstType) {
+            this.dstType = dstType;
+        }
+
+        public void setSrcGuid(String srcGuid) {
+            this.srcGuid = srcGuid;
+        }
+
+        public void setDstGuid(String dstGuid) {
+            this.dstGuid = dstGuid;
+        }
+
+        public void setRecords(Long records) {
+            this.records = records;
+        }
+
+        public void setBytes(Long bytes) {
+            this.bytes = bytes;
+        }
+
+        public void setSpeedRecord(Long speedRecord) {
+            this.speedRecord = speedRecord;
+        }
+
+        public void setSpeedByte(Long speedByte) {
+            this.speedByte = speedByte;
+        }
+
+        public void setStagePercent(String stagePercent) {
+            this.stagePercent = stagePercent;
+        }
+
+        public void setErrorRecord(Long errorRecord) {
+            this.errorRecord = errorRecord;
+        }
+
+        public void setErrorBytes(Long errorBytes) {
+            this.errorBytes = errorBytes;
+        }
+
+        public void setWaitReadTimeMs(Long waitReadTimeMs) {
+            this.waitReadTimeMs = waitReadTimeMs;
+        }
+
+        public void setWaitWriteTimeMs(Long waitWriteTimeMs) {
+            this.waitWriteTimeMs = waitWriteTimeMs;
+        }
+
+        public void setOdpsBlockCloseTimeMs(Long odpsBlockCloseTimeMs) {
+            this.odpsBlockCloseTimeMs = odpsBlockCloseTimeMs;
+        }
+
+        public void setSqlQueryTimeMs(Long sqlQueryTimeMs) {
+            this.sqlQueryTimeMs = sqlQueryTimeMs;
+        }
+
+        public void setResultNextTimeMs(Long resultNextTimeMs) {
+            this.resultNextTimeMs = resultNextTimeMs;
+        }
+
+        public void setTaskTotalTimeMs(Long taskTotalTimeMs) {
+            this.taskTotalTimeMs = taskTotalTimeMs;
+        }
+
+        public void setHostAddress(String hostAddress) {
+            this.hostAddress = hostAddress;
         }
     }
 }

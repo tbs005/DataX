@@ -44,14 +44,6 @@
         </dependency>
         <!-- httpclient end -->
 
-        <!-- json begin -->
-        <dependency>
-            <groupId>net.sf.json-lib</groupId>
-            <artifactId>json-lib</artifactId>
-            <version>2.2.3</version>
-        </dependency>
-        <!-- json end -->
-
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
