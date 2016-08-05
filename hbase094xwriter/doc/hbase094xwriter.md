@@ -33,7 +33,6 @@ HbaseWriter 插件实现了从向Hbase中写取数据。在底层实现上，Hba
 
 4、HbaseWriter中有一个必填配置项是：hbaseConfig，需要你联系 HBase PE，将hbase-site.xml 中与连接 HBase 相关的配置项提取出来，以 json 格式填入，同时可以补充更多HBase client的配置来优化与服务器的交互。   
 
-**注意**: 目前所有关于hbase client端的设置均是放在hbaseConfig配置项中，而同步中心中hbaseConfig是从mc获取的，若hbase发生迁移，用户需要在同步中心二次配置个性优化配置 
 
 如：hbase-site.xml的配置内容如下
 
