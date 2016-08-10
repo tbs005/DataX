@@ -30,4 +30,7 @@ public class OTSConst {
     
     // 限制项
     public final static String REQUEST_TOTAL_SIZE_LIMITATION = "requestTotalSizeLimitation";
+    public final static String ATTRIBUTE_COLUMN_SIZE_LIMITATION = "attributeColumnSizeLimitation";
+    public final static String PRIMARY_KEY_COLUMN_SIZE_LIMITATION = "primaryKeyColumnSizeLimitation";
+    public final static String ATTRIBUTE_COLUMN_MAX_COUNT = "attributeColumnMaxCount";
 }

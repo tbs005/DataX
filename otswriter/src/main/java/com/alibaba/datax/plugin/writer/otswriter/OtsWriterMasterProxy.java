@@ -46,7 +46,10 @@ public class OtsWriterMasterProxy {
         conf.setBufferSize(param.getInt(OTSConst.BUFFER_SIZE, 1024));
         
         RestrictConf restrictConf = conf.new RestrictConf();
-        restrictConf.setRequestTotalSizeLimition(param.getInt(OTSConst.REQUEST_TOTAL_SIZE_LIMITATION, 1024*1024));
+        restrictConf.setRequestTotalSizeLimition(param.getInt(OTSConst.REQUEST_TOTAL_SIZE_LIMITATION, 1024 * 1024));
+        restrictConf.setAttributeColumnSize(param.getInt(OTSConst.ATTRIBUTE_COLUMN_SIZE_LIMITATION, 2 * 1024 * 1024));
+        restrictConf.setPrimaryKeyColumnSize(param.getInt(OTSConst.PRIMARY_KEY_COLUMN_SIZE_LIMITATION, 1024));
+        restrictConf.setMaxColumnsCount(param.getInt(OTSConst.ATTRIBUTE_COLUMN_MAX_COUNT, 1024));
         conf.setRestrictConf(restrictConf);
 
         // 必选参数

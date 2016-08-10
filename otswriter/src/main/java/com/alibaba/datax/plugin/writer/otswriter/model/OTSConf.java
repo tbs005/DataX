@@ -23,16 +23,43 @@ public class OTSConf {
     
     private OTSOpType operation;
     private RestrictConf restrictConf;
-    
+
     //限制项
     public class RestrictConf {
         private int requestTotalSizeLimition = 1024 * 1024;
-        
+        private int primaryKeyColumnSize = 1024;
+        private int attributeColumnSize = 2 * 1024 * 1024;
+        private int maxColumnsCount = 1024;
+
         public int getRequestTotalSizeLimition() {
             return requestTotalSizeLimition;
         }
         public void setRequestTotalSizeLimition(int requestTotalSizeLimition) {
             this.requestTotalSizeLimition = requestTotalSizeLimition;
+        }
+
+        public void setPrimaryKeyColumnSize(int primaryKeyColumnSize) {
+            this.primaryKeyColumnSize = primaryKeyColumnSize;
+        }
+
+        public void setAttributeColumnSize(int attributeColumnSize) {
+            this.attributeColumnSize = attributeColumnSize;
+        }
+
+        public void setMaxColumnsCount(int maxColumnsCount) {
+            this.maxColumnsCount = maxColumnsCount;
+        }
+
+        public int getAttributeColumnSize() {
+            return attributeColumnSize;
+        }
+
+        public int getMaxColumnsCount() {
+            return maxColumnsCount;
+        }
+
+        public int getPrimaryKeyColumnSize() {
+            return primaryKeyColumnSize;
         }
     }
 
