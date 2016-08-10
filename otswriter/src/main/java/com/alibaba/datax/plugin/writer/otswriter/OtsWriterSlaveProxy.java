@@ -87,6 +87,9 @@ public class OtsWriterSlaveProxy {
         writerConfig.setMaxBatchRowsCount(conf.getBatchWriteCount());
         writerConfig.setMaxBatchSize(conf.getRestrictConf().getRequestTotalSizeLimition());
         writerConfig.setBufferSize(conf.getBufferSize());
+        writerConfig.setMaxAttrColumnSize(conf.getRestrictConf().getAttributeColumnSize());
+        writerConfig.setMaxColumnsCount(conf.getRestrictConf().getMaxColumnsCount());
+        writerConfig.setMaxPKColumnSize(conf.getRestrictConf().getPrimaryKeyColumnSize());
         otsWriter = new DefaultOTSWriter(otsAsync, conf.getTableName(), writerConfig, new WriterCallback(collector), Executors.newFixedThreadPool(3));
 
         int expectColumnCount = conf.getPrimaryKeyColumn().size() + conf.getAttributeColumn().size();
