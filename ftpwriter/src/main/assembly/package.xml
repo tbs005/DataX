@@ -12,6 +12,7 @@
 			<directory>src/main/resources</directory>
 			<includes>
 				<include>plugin.json</include>
+				<include>plugin_job_template.json</include>
 			</includes>
 			<outputDirectory>plugin/writer/ftpwriter</outputDirectory>
 		</fileSet>
