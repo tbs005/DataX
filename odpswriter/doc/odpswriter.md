@@ -65,8 +65,8 @@ ODPSWriter插件用于实现往ODPS插入或者更新数据，主要提供给etl
                           "accessId": "**b7**",
                           "accessKey": "***dv**yk**mm",
                           "truncate": true,
-                          "odpsServer": "http://service.odpsstg.aliyun-inc.com/stgnew/",
-                          "tunnelServer": "http://tunnel.odpsstg.aliyun-inc.com",
+                          "odpsServer": "odpsServer",
+                          "tunnelServer": "http://dt.odps.aliyun.com",
                           "accountType": "aliyun"
                        }
                     }
@@ -240,10 +240,10 @@ ODPSWriter插件用于实现往ODPS插入或者更新数据，主要提供给etl
                         "partition": [
                             "pt=20141010000000,year=2014"
                         ],
-                        "odpsServer": "http://service.odps.aliyun-inc.com/api",
+                        "odpsServer": "odpsServer",
                         "project": "cdo_datasync",
                         "table": "datax3_odpswriter_perf_10column_1kb_00",
-                        "tunnelServer": "http://dt.odps.cm11.aliyun-inc.com"
+                        "tunnelServer": "http://dt.odps.aliyun.com"
                     }
                 },
                 "writer": {
