@@ -58,7 +58,7 @@ ODPSReader 支持读取分区表、非分区表，不支持读取虚拟视图。
                         ],
                         "packageAuthorizedProject": "yourCurrentProjectName",
                         "splitMode": "record",
-                        "odpsServer": "odpsServer"
+                        "odpsServer": "http://service.odps.aliyun.com/api"
                     }
                 },
                 "writer": {
@@ -256,7 +256,7 @@ ODPSReader 支持读取分区表、非分区表，不支持读取虚拟视图。
                         "partition": [
                             "pt=20141010000000,year=2014"
                         ],
-                        "odpsServer": "odpsServer",
+                        "odpsServer": "http://service.odps.aliyun.com/api",
                         "project": "cdo_datasync",
                         "table": "datax3_odpswriter_perf_10column_1kb_00",
                         "tunnelServer": "http://dt.odps.aliyun.com"
