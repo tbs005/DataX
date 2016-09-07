@@ -5,7 +5,7 @@
 
 
 ## 1 快速介绍
-ODPSReader 实现了从 ODPS读取数据的功能，有关ODPS请参看(http://wiki.aliyun-inc.com/projects/apsara/wiki/odps)。 在底层实现上，ODPSReader 根据你配置的 源头项目 / 表 / 分区 / 表字段 等信息，通过 `Tunnel` 从 ODPS 系统中读取数据。
+ODPSReader 实现了从 ODPS读取数据的功能，有关ODPS请参看(https://help.aliyun.com/document_detail/27800.html?spm=5176.doc27803.6.101.NxCIgY)。 在底层实现上，ODPSReader 根据你配置的 源头项目 / 表 / 分区 / 表字段 等信息，通过 `Tunnel` 从 ODPS 系统中读取数据。
 
 <br />
 
@@ -140,7 +140,7 @@ ODPSReader 支持读取分区表、非分区表，不支持读取虚拟视图。
 
 	* 描述：源头表 所在 ODPS 系统的tunnel 地址 <br />
 
-	* 必选：是，如果地址是对内的（含有"-inc")则可以不填 <br />
+	* 必选：是 <br />
 
 	* 默认值：无 <br />
 
@@ -256,10 +256,10 @@ ODPSReader 支持读取分区表、非分区表，不支持读取虚拟视图。
                         "partition": [
                             "pt=20141010000000,year=2014"
                         ],
-                        "odpsServer": "http://service.odps.aliyun-inc.com/api",
+                        "odpsServer": "odpsServer",
                         "project": "cdo_datasync",
                         "table": "datax3_odpswriter_perf_10column_1kb_00",
-                        "tunnelServer": "http://dt.odps.cm11.aliyun-inc.com"
+                        "tunnelServer": "http://dt.odps.aliyun.com"
                     }
                 },
                 "writer": {
