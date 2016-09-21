@@ -21,8 +21,8 @@ HdfsWriter提供向HDFS文件系统指定路径中写入TEXTFile文件和ORCFile
 * (4)、对于Hive分区表目前仅支持一次写入单个分区;
 * (5)、对于textfile需用户保证写入hdfs文件的分隔符**与在Hive上创建表时的分隔符一致**,从而实现写入hdfs数据与Hive表字段关联;
 * (6)、HdfsWriter实现过程是：首先根据用户指定的path，创建一个hdfs文件系统上不存在的临时目录，创建规则：path_随机；然后将读取的文件写入这个临时目录；全部写入后再将这个临时目录下的文件移动到用户指定目录（在创建文件时保证文件名不重复）; 最后删除临时目录。如果在中间过程发生网络中断等情况造成无法与hdfs建立连接，需要用户手动删除已经写入的文件和临时目录。
-* (7)、目前插件中Hive版本为1.1.1，Hadoop版本为2.5.0（Apache［为适配JDK1.6］,在Hadoop 2.6.0 和Hive 1.2.0测试环境中写入正常；其它版本需后期进一步测试；
-* (8)、目前HdfsWriter不支持Kerberos等认证，所以用户需要保证DATAX有权限访问该hdfs节点,并且对指定的目录有写的权限
+* (7)、目前插件中Hive版本为1.1.1，Hadoop版本为2.7.1（Apache［为适配JDK1.7］,在Hadoop 2.5.0, Hadoop 2.6.0 和Hive 1.2.0测试环境中写入正常；其它版本需后期进一步测试；
+* (8)、目前HdfsWriter支持Kerberos认证（注意：如果用户需要进行kerberos认证，那么用户使用的Hadoop集群版本需要和hdfsreader的Hadoop版本保持一致，如果高于hdfsreader的Hadoop版本，不保证kerberos认证有效）
 
 ## 3 功能说明
 
@@ -263,6 +263,32 @@ HdfsWriter提供向HDFS文件系统指定路径中写入TEXTFile文件和ORCFile
  	* 必选：否 <br />
 
  	* 默认值：utf-8，**慎重修改** <br />
+
+* **haveKerberos**
+
+	* 描述：是否有Kerberos认证，默认false<br />
+ 
+		 例如如果用户配置true，则配置项kerberosKeytabFilePath，kerberosPrincipal为必填。
+
+ 	* 必选：haveKerberos 为true必选 <br />
+ 
+ 	* 默认值：false <br />
+
+* **kerberosKeytabFilePath**
+
+	* 描述：Kerberos认证 keytab文件路径，绝对路径<br />
+
+ 	* 必选：否 <br />
+ 
+ 	* 默认值：无 <br />
+
+* **kerberosPrincipal**
+
+	* 描述：Kerberos认证Principal名，如xxxx/hadoopclient@xxx.xxx <br />
+
+ 	* 必选：haveKerberos 为true必选 <br />
+ 
+ 	* 默认值：无 <br />
 
 
 ### 3.3 类型转换
