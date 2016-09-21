@@ -172,10 +172,6 @@ HdfsWriter提供向HDFS文件系统指定路径中写入TEXTFile文件和ORCFile
 
 	* 描述：Hadoop hdfs文件系统namenode节点地址。格式：hdfs://ip:端口；例如：hdfs://127.0.0.1:9000<br />
 
-
-		**特别需要注意的是，目前HdfsWriter不支持Kerberos等认证，所以用户需要保证DATAX有权限访问该节点**
-
-
 	* 必选：是 <br />
 
 	* 默认值：无 <br />
