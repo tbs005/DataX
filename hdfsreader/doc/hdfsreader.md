@@ -30,7 +30,7 @@ HdfsReader实现了从Hadoop分布式文件系统Hdfs中读取文件数据并转
 
 7. csv类型支持压缩格式有：gzip、bz2、zip、lzo、lzo_deflate、snappy。
 
-8. 目前插件中Hive版本为1.1.1，Hadoop版本为2.5.0（Apache［为适配JDK1.6］,在Hadoop 2.6.0 和Hive 1.2.0测试环境中写入正常；其它版本需后期进一步测试； 
+8. 目前插件中Hive版本为1.1.1，Hadoop版本为2.5.0（Apache［为适配JDK1.6］,在Hadoop 2.6.0, Hadoop 2.7.1 和Hive 1.2.0测试环境中写入正常；其它版本需后期进一步测试； 
 
 9. 支持kerberos认证
 
