@@ -7,7 +7,7 @@
 
 HdfsReader提供了读取分布式文件系统数据存储的能力。在底层实现上，HdfsReader获取分布式文件系统上文件的数据，并转换为DataX传输协议传递给Writer。
 
-**目前HdfsReader仅支持textfile和orcfile两种格式的文件，且文件内容存放的必须是一张逻辑意义上的二维表。**
+**目前HdfsReader支持的文件格式有textfile（text）、orcfile（orc）、rcfile（rc）、sequence file（seq）和普通逻辑二维表（csv）类型格式的文件，且文件内容存放的必须是一张逻辑意义上的二维表。**
 
 **HdfsReader需要Jdk1.7及以上版本的支持。**
 
@@ -30,7 +30,7 @@ HdfsReader实现了从Hadoop分布式文件系统Hdfs中读取文件数据并转
 
 7. csv类型支持压缩格式有：gzip、bz2、zip、lzo、lzo_deflate、snappy。
 
-8. 目前插件中Hive版本为1.1.1，Hadoop版本为2.5.0（Apache［为适配JDK1.6］,在Hadoop 2.6.0, Hadoop 2.7.1 和Hive 1.2.0测试环境中写入正常；其它版本需后期进一步测试； 
+8. 目前插件中Hive版本为1.1.1，Hadoop版本为2.7.1（Apache［为适配JDK1.7］,在Hadoop 2.5.0, Hadoop 2.6.0 和Hive 1.2.0测试环境中写入正常；其它版本需后期进一步测试； 
 
 9. 支持kerberos认证
 
