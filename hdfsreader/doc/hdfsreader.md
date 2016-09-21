@@ -32,7 +32,7 @@ HdfsReader实现了从Hadoop分布式文件系统Hdfs中读取文件数据并转
 
 8. 目前插件中Hive版本为1.1.1，Hadoop版本为2.7.1（Apache［为适配JDK1.7］,在Hadoop 2.5.0, Hadoop 2.6.0 和Hive 1.2.0测试环境中写入正常；其它版本需后期进一步测试； 
 
-9. 支持kerberos认证
+9. 支持kerberos认证（注意：如果用户需要进行kerberos认证，那么用户使用的Hadoop集群版本需要和hdfsreader的Hadoop版本保持一致，如果高于hdfsreader的Hadoop版本，不保证kerberos认证有效）
 
 我们暂时不能做到：
 
