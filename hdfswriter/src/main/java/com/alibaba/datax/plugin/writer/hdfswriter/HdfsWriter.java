@@ -44,7 +44,7 @@ public class HdfsWriter extends Writer {
             //创建textfile存储
             hdfsHelper = new HdfsHelper();
 
-            hdfsHelper.getFileSystem(defaultFS);
+            hdfsHelper.getFileSystem(defaultFS, this.writerSliceConfig);
         }
 
         private void validateParameter() {
@@ -84,8 +84,8 @@ public class HdfsWriter extends Writer {
             Set<String> supportedWriteModes = Sets.newHashSet("append", "nonconflict");
             if (!supportedWriteModes.contains(writeMode)) {
                 throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
-                                String.format("仅支持append, nonConflict两种模式, 不支持您配置的 writeMode 模式 : [%s]",
-                                        writeMode));
+                        String.format("仅支持append, nonConflict两种模式, 不支持您配置的 writeMode 模式 : [%s]",
+                                writeMode));
             }
             this.writerSliceConfig.set(Key.WRITE_MODE, writeMode);
             //fieldDelimiter check
@@ -102,7 +102,8 @@ public class HdfsWriter extends Writer {
             this.compress  = this.writerSliceConfig.getString(Key.COMPRESS,null);
             if(fileType.equalsIgnoreCase("TEXT")){
                 Set<String> textSupportedCompress = Sets.newHashSet("GZIP", "BZIP2");
-                if(null == compress ){
+                //用户可能配置的是compress:"",空字符串,需要将compress设置为null
+                if(StringUtils.isBlank(compress) ){
                     this.writerSliceConfig.set(Key.COMPRESS, null);
                 }else {
                     compress = compress.toUpperCase().trim();
@@ -126,6 +127,12 @@ public class HdfsWriter extends Writer {
                 }
 
             }
+            //Kerberos check
+            Boolean haveKerberos = this.writerSliceConfig.getBool(Key.HAVE_KERBEROS, false);
+            if(haveKerberos) {
+                this.writerSliceConfig.getNecessaryValue(Key.KERBEROS_KEYTAB_FILE_PATH, HdfsWriterErrorCode.REQUIRED_VALUE);
+                this.writerSliceConfig.getNecessaryValue(Key.KERBEROS_PRINCIPAL, HdfsWriterErrorCode.REQUIRED_VALUE);
+            }
             // encoding check
             this.encoding = this.writerSliceConfig.getString(Key.ENCODING,Constant.DEFAULT_ENCODING);
             try {
@@ -144,8 +151,8 @@ public class HdfsWriter extends Writer {
             if(hdfsHelper.isPathexists(path)){
                 if(!hdfsHelper.isPathDir(path)){
                     throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
-                                    String.format("您配置的path: [%s] 不是一个合法的目录, 请您注意文件重名, 不合法目录名等情况.",
-                                            path));
+                            String.format("您配置的path: [%s] 不是一个合法的目录, 请您注意文件重名, 不合法目录名等情况.",
+                                    path));
                 }
                 //根据writeMode对目录下文件进行处理
                 Path[] existFilePaths = hdfsHelper.hdfsDirList(path,fileName);
@@ -154,11 +161,11 @@ public class HdfsWriter extends Writer {
                     isExistFile = true;
                 }
                 /**
-                if ("truncate".equals(writeMode) && isExistFile ) {
-                    LOG.info(String.format("由于您配置了writeMode truncate, 开始清理 [%s] 下面以 [%s] 开头的内容",
-                            path, fileName));
-                    hdfsHelper.deleteFiles(existFilePaths);
-                } else
+                 if ("truncate".equals(writeMode) && isExistFile ) {
+                 LOG.info(String.format("由于您配置了writeMode truncate, 开始清理 [%s] 下面以 [%s] 开头的内容",
+                 path, fileName));
+                 hdfsHelper.deleteFiles(existFilePaths);
+                 } else
                  */
                 if ("append".equalsIgnoreCase(writeMode)) {
                     LOG.info(String.format("由于您配置了writeMode append, 写入前不做清理工作, [%s] 目录下写入相应文件名前缀  [%s] 的文件",
@@ -332,10 +339,11 @@ public class HdfsWriter extends Writer {
 
             this.defaultFS = this.writerSliceConfig.getString(Key.DEFAULT_FS);
             this.fileType = this.writerSliceConfig.getString(Key.FILE_TYPE);
+            //得当的已经是绝对路径，eg：hdfs://10.101.204.12:9000/user/hive/warehouse/writer.db/text/test.textfile
             this.fileName = this.writerSliceConfig.getString(Key.FILE_NAME);
 
             hdfsHelper = new HdfsHelper();
-            hdfsHelper.getFileSystem(defaultFS);
+            hdfsHelper.getFileSystem(defaultFS, writerSliceConfig);
         }
 
         @Override
