@@ -32,8 +32,8 @@ public class StandardFtpHelperImpl implements IFtpHelper {
         this.ftpClient = new FTPClient();
         try {
             this.ftpClient.setControlEncoding("UTF-8");
-            this.ftpClient.configure(new FTPClientConfig(
-                    FTPClientConfig.SYST_UNIX));
+            // 不需要写死ftp server的OS TYPE,FTPClient getSystemType()方法会自动识别
+            // this.ftpClient.configure(new FTPClientConfig(FTPClientConfig.SYST_UNIX));
             this.ftpClient.setDefaultTimeout(timeout);
             this.ftpClient.setConnectTimeout(timeout);
             this.ftpClient.setDataTimeout(timeout);
