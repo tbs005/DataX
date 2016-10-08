@@ -184,9 +184,11 @@ MysqlWriter 通过 DataX 框架获取 Reader 生成的协议数据，根据你�
 
 * **writeMode**
 
-	* 描述：控制写入数据到目标表采用 `insert into` 或者 `replace into` 语句<br />
+	* 描述：控制写入数据到目标表采用 `insert into` 或者 `replace into` 或者 `ON DUPLICATE KEY UPDATE` 语句<br />
 
 	* 必选：是 <br />
+	
+	* 所有选项：insert/replace/update <br />
 
 	* 默认值：insert <br />
 
