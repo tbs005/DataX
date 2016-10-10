@@ -338,7 +338,7 @@ public class Configuration {
 	 */
 	public Long getLong(final String path) {
 		String result = this.getString(path);
-		if (null == result) {
+		if (StringUtils.isBlank(result)) {
 			return null;
 		}
 
@@ -372,7 +372,7 @@ public class Configuration {
 	 */
 	public Double getDouble(final String path) {
 		String result = this.getString(path);
-		if (null == result) {
+		if (StringUtils.isBlank(result)) {
 			return null;
 		}
 
