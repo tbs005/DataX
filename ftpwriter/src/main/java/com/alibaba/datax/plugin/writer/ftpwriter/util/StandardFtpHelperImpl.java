@@ -137,6 +137,47 @@ public class StandardFtpHelperImpl implements IFtpHelper {
     }
 
     @Override
+    public void mkDirRecursive(String directoryPath){
+        StringBuilder dirPath = new StringBuilder();
+        dirPath.append(IOUtils.DIR_SEPARATOR_UNIX);
+        String[] dirSplit = StringUtils.split(directoryPath,IOUtils.DIR_SEPARATOR_UNIX);
+        String message = String.format("创建目录:%s时发生异常,请确认与ftp服务器的连接正常,拥有目录创建权限", directoryPath);
+        try {
+            // ftp server不支持递归创建目录,只能一级一级创建
+            for(String dirName : dirSplit){
+                dirPath.append(dirName);
+                boolean mkdirSuccess = mkDirSingleHierarchy(dirPath.toString());
+                dirPath.append(IOUtils.DIR_SEPARATOR_UNIX);
+                if(!mkdirSuccess){
+                    throw DataXException.asDataXException(
+                            FtpWriterErrorCode.COMMAND_FTP_IO_EXCEPTION,
+                            message);
+                }
+            }
+        } catch (IOException e) {
+            message = String.format("%s, errorMessage:%s", message,
+                    e.getMessage());
+            LOG.error(message);
+            throw DataXException.asDataXException(
+                    FtpWriterErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
+        }
+    }
+
+    public boolean mkDirSingleHierarchy(String directoryPath) throws IOException {
+        boolean isDirExist = this.ftpClient
+                .changeWorkingDirectory(directoryPath);
+        // 如果directoryPath目录不存在,则创建
+        if (!isDirExist) {
+            int replayCode = this.ftpClient.mkd(directoryPath);
+            if (replayCode != FTPReply.COMMAND_OK
+                    && replayCode != FTPReply.PATHNAME_CREATED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
     public OutputStream getOutputStream(String filePath) {
         try {
             this.printWorkingDirectory();

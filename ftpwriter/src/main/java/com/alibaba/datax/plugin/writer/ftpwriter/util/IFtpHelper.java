@@ -15,6 +15,11 @@ public interface IFtpHelper {
      * */
     public void mkdir(String directoryPath);
 
+    /**
+     * 支持目录递归创建
+     */
+    public void mkDirRecursive(String directoryPath);
+
     public OutputStream getOutputStream(String filePath);
     
     public String getRemoteFileContent(String filePath);

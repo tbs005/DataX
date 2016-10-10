@@ -109,7 +109,7 @@ public class FtpWriter extends Writer {
         public void prepare() {
             String path = this.writerSliceConfig.getString(Key.PATH);
             // warn: 这里用户需要配一个目录
-            this.ftpHelper.mkdir(path);
+            this.ftpHelper.mkDirRecursive(path);
 
             String fileName = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FILE_NAME);

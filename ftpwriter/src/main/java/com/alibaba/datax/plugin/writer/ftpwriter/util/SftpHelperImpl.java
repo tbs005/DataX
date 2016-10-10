@@ -134,6 +134,64 @@ public class SftpHelperImpl implements IFtpHelper {
     }
 
     @Override
+    public void mkDirRecursive(String directoryPath){
+        boolean isDirExist = false;
+        try {
+            this.printWorkingDirectory();
+            SftpATTRS sftpATTRS = this.channelSftp.lstat(directoryPath);
+            isDirExist = sftpATTRS.isDir();
+        } catch (SftpException e) {
+            if (e.getMessage().toLowerCase().equals("no such file")) {
+                LOG.warn(String.format(
+                        "您的配置项path:[%s]不存在，将尝试进行目录创建, errorMessage:%s",
+                        directoryPath, e.getMessage()), e);
+                isDirExist = false;
+            }
+        }
+        if (!isDirExist) {
+            StringBuilder dirPath = new StringBuilder();
+            dirPath.append(IOUtils.DIR_SEPARATOR_UNIX);
+            String[] dirSplit = StringUtils.split(directoryPath,IOUtils.DIR_SEPARATOR_UNIX);
+            try {
+                // ftp server不支持递归创建目录,只能一级一级创建
+                for(String dirName : dirSplit){
+                    dirPath.append(dirName);
+                    mkDirSingleHierarchy(dirPath.toString());
+                    dirPath.append(IOUtils.DIR_SEPARATOR_UNIX);
+                }
+            } catch (SftpException e) {
+                String message = String
+                        .format("创建目录:%s时发生I/O异常,请确认与ftp服务器的连接正常,拥有目录创建权限, errorMessage:%s",
+                                directoryPath, e.getMessage());
+                LOG.error(message, e);
+                throw DataXException
+                        .asDataXException(
+                                FtpWriterErrorCode.COMMAND_FTP_IO_EXCEPTION,
+                                message, e);
+            }
+        }
+    }
+
+    public boolean mkDirSingleHierarchy(String directoryPath) throws SftpException {
+        boolean isDirExist = false;
+        try {
+            SftpATTRS sftpATTRS = this.channelSftp.lstat(directoryPath);
+            isDirExist = sftpATTRS.isDir();
+        } catch (SftpException e) {
+            if(!isDirExist){
+                LOG.info(String.format("正在逐级创建目录 [%s]",directoryPath));
+                this.channelSftp.mkdir(directoryPath);
+                return true;
+            }
+        }
+        if(!isDirExist){
+            LOG.info(String.format("正在逐级创建目录 [%s]",directoryPath));
+            this.channelSftp.mkdir(directoryPath);
+        }
+        return true;
+    }
+
+    @Override
     public OutputStream getOutputStream(String filePath) {
         try {
             this.printWorkingDirectory();
