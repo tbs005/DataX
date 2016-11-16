@@ -335,5 +335,15 @@ Hive在建表的时候，可以指定分区partition，例如创建分区partiti
 
 ## 6 FAQ
 
-略
+1. 如果报java.io.IOException: Maximum column length of 100,000 exceeded in column...异常信息，说明数据源column字段长度超过了100000字符。
+
+需要配置
+```json
+"csvReaderConfig":{
+	"safetySwitch": false,
+	"skipEmptyRecords": false,
+	"useTextQualifier": false
+}
+```
+safetySwitch = false;//单列长度不限制100000字符
 
