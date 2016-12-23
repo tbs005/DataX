@@ -206,7 +206,7 @@ TxtFileReader实现了从本地文件读取数据并转为DataX协议的功能�
 
 所有配置项及默认值,配置时 csvReaderConfig 的map中请**严格按照以下字段名字进行配置**：
 
-		```json
+		```
 boolean caseSensitive = true;
 char textQualifier = 34;
 boolean trimWhitespace = true;
