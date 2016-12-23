@@ -194,19 +194,20 @@ TxtFileReader实现了从本地文件读取数据并转为DataX协议的功能�
  
  	* 默认值：无 <br />
 
-        * 常见配置： <br />
+        
+常见配置：
 
-		```json
+```json
 "csvReaderConfig":{
-                                "safetySwitch": false,
-                                "skipEmptyRecords": false,
-                                "useTextQualifier": false
-                        }
-		```
+        "safetySwitch": false,
+        "skipEmptyRecords": false,
+        "useTextQualifier": false
+}
+```
 
 所有配置项及默认值,配置时 csvReaderConfig 的map中请**严格按照以下字段名字进行配置**：
 
-		```
+```
 boolean caseSensitive = true;
 char textQualifier = 34;
 boolean trimWhitespace = true;
@@ -219,7 +220,7 @@ int escapeMode = 1;
 boolean safetySwitch = true;//单列长度是否限制100000字符
 boolean skipEmptyRecords = true;//是否跳过空行
 boolean captureRawRecord = true;
-		```
+```
 
 ### 3.3 类型转换
 
