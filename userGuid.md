@@ -242,7 +242,7 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 * [HdfsWriter](http://gitlab.alibaba-inc.com/datax/datax/wikis/datax-plugin-hdfswriter): 提供向Hdfs文件系统中写入textfile文件和orcfile文件功能。
 * StreamWriter
 
-
+* [DataX Transform] (https://github.com/alibaba/DataX/blob/master/transformer/doc/transformer.md): DataX Transform功能说明
 
 # Contact us
 
