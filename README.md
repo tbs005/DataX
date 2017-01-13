@@ -67,4 +67,3 @@ DataX目前已经有了比较全面的插件体系，主流的RDBMS数据库、N
 ![DataX-OpenSource-Dingding](https://cloud.githubusercontent.com/assets/1067175/17893431/40c5f8d2-6978-11e6-8fdd-80d4e961a72b.png)
 
 
-官方旺旺群：1585662022
