@@ -251,6 +251,24 @@ HdfsReader实现了从Hadoop分布式文件系统Hdfs中读取文件数据并转
  	* 必选：否 <br />
  
  	* 默认值：无 <br />
+	
+* **hadoopConfig**
+
+	* 描述：hadoopConfig里可以配置与Hadoop相关的一些高级参数，比如HA的配置。<br />
+
+		```json
+		"hadoopConfig":{
+		        "dfs.nameservices": "testDfs",
+		        "dfs.ha.namenodes.testDfs": "namenode1,namenode2",
+		        "dfs.namenode.rpc-address.youkuDfs.namenode1": "",
+		        "dfs.namenode.rpc-address.youkuDfs.namenode2": "",
+		        "dfs.client.failover.proxy.provider.testDfs": "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
+		}
+		```
+
+	* 必选：否 <br />
+ 
+ 	* 默认值：无 <br />
 
 * **csvReaderConfig**
 
