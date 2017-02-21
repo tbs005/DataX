@@ -260,8 +260,8 @@ HdfsReader实现了从Hadoop分布式文件系统Hdfs中读取文件数据并转
 		"hadoopConfig":{
 		        "dfs.nameservices": "testDfs",
 		        "dfs.ha.namenodes.testDfs": "namenode1,namenode2",
-		        "dfs.namenode.rpc-address.youkuDfs.namenode1": "",
-		        "dfs.namenode.rpc-address.youkuDfs.namenode2": "",
+		        "dfs.namenode.rpc-address.aliDfs.namenode1": "",
+		        "dfs.namenode.rpc-address.aliDfs.namenode2": "",
 		        "dfs.client.failover.proxy.provider.testDfs": "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
 		}
 		```
