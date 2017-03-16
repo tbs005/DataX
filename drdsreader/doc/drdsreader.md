@@ -175,7 +175,7 @@ DRDS的插件目前DataX只适配了Mysql引擎的场景，DRDS对于DataX而言
 
 * **where**
  
-	* 描述：筛选条件，DrdsReader根据指定的column、table、where条件拼接SQL，并根据这个SQL进行数据抽取。例如在做测试时，可以将where条件指定为limit 10；在实际业务场景中，往往会选择当天的数据进行同步，可以将where条件指定为gmt_create > $bizdate 。<br />。
+	* 描述：筛选条件，DrdsReader根据指定的column、table、where条件拼接SQL，并根据这个SQL进行数据抽取。在实际业务场景中，往往会选择当天的数据进行同步，可以将where条件指定为gmt_create > $bizdate 。<br />。
 	
           where条件可以有效地进行业务增量同步。where条件不配置或者为空，视作全表同步数据。
  
@@ -185,13 +185,7 @@ DRDS的插件目前DataX只适配了Mysql引擎的场景，DRDS对于DataX而言
 
 * **querySql**
 
-	* 描述：在有些业务场景下，where这一配置项不足以描述所筛选的条件，用户可以通过该配置型来自定义筛选SQL。当用户配置了这一项之后，DataX系统就会忽略table，column这些配置型，直接使用这个配置项的内容对数据进行筛选，例如需要进行多表join后同步数据，使用select a,b from table_a join table_b on table_a.id = table_b.id <br />
- 
-	 `当用户配置querySql时，drdsReader直接忽略table、column、where条件的配置`。
-	 
-	* 必选：否 <br />
- 
-	* 默认值：无 <br />
+	* 描述：暂时不支持配置querySql模式 <br />
 
 
 ### 3.3 类型转换
