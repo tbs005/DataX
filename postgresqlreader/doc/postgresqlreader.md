@@ -191,7 +191,7 @@ PostgresqlReader插件实现了从PostgreSQL读取数据。在底层实现上，
 
 * **where**
 
-	* 描述：筛选条件，Pgeader根据指定的column、table、where条件拼接SQL，并根据这个SQL进行数据抽取。例如在做测试时，可以将where条件指定为limit 10；在实际业务场景中，往往会选择当天的数据进行同步，可以将where条件指定为gmt_create > $bizdate 。<br />。
+	* 描述：筛选条件，MysqlReader根据指定的column、table、where条件拼接SQL，并根据这个SQL进行数据抽取。在实际业务场景中，往往会选择当天的数据进行同步，可以将where条件指定为gmt_create > $bizdate 。注意：不可以将where条件指定为limit 10，limit不是SQL的合法where子句。<br />
 
           where条件可以有效地进行业务增量同步。		where条件不配置或者为空，视作全表同步数据。
 
