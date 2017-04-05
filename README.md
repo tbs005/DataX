@@ -60,7 +60,9 @@ DataX目前已经有了比较全面的插件体系，主流的RDBMS数据库、N
 
 # 项目成员
 
-天烬、巴真、光戈、一斅、祁然、云时
+核心Contributions:  光戈、一斅、祁然、云时
+
+感谢天烬、巴真对DataX做出的贡献。
 
 # Contact us
 
@@ -97,6 +99,6 @@ DataX目前已经有了比较全面的插件体系，主流的RDBMS数据库、N
 ````
 钉钉用户请扫描以下二维码进行讨论：
 
-![DataX-OpenSource-Dingding](https://cloud.githubusercontent.com/assets/1067175/17893431/40c5f8d2-6978-11e6-8fdd-80d4e961a72b.png)
+![DataX-OpenSource-Dingding](https://raw.githubusercontent.com/alibaba/DataX/master/images/datax-opensource-dingding.png)
 
 
