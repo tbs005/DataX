@@ -690,6 +690,8 @@ public class UnstructuredStorageReaderUtil {
 						JSON.toJSONString(UnstructuredStorageReaderUtil.csvReaderConfigMap),JSON.toJSONString(csvReader)));
 			}
 		}else {
+			//默认关闭安全模式, 放开10W字节的限制
+			csvReader.setSafetySwitch(false);
 			LOG.info(String.format("CsvReader使用默认值[%s],csvReaderConfig值为[%s]",JSON.toJSONString(csvReader),JSON.toJSONString(UnstructuredStorageReaderUtil.csvReaderConfigMap)));
 		}
 	}
