@@ -61,7 +61,14 @@ RDBMSWriter 通过 DataX 框架获取 Reader 生成的协议数据，RDBMSWriter
                 "writer": {
                     "name": "rdbmswriter",
                     "parameter": {
-                        "jdbcUrl": "jdbc:dm://ip:port/database",
+                        "connection": [
+                            {
+                                "jdbcUrl": "jdbc:dm://ip:port/database",
+                                "table": [
+                                    "table"
+                                ]
+                            }
+                        ],
                         "username": "username",
                         "password": "password",
                         "table": "table",
