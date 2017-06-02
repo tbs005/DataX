@@ -117,7 +117,7 @@ RDBMSWriter 通过 DataX 框架获取 Reader 生成的协议数据，RDBMSWriter
 	    ]
 	}
 	```
-		- 在rdbmswriter插件目录下有libs子目录，您需要将您具体的数据库驱动放到libs目录下。
+	- 在rdbmswriter插件目录下有libs子目录，您需要将您具体的数据库驱动放到libs目录下。
         
 	```
 	$tree
