@@ -89,62 +89,62 @@ RDBMSWriter 通过 DataX 框架获取 Reader 生成的协议数据，RDBMSWriter
 
 ### 3.2 参数说明
 
+
 * **jdbcUrl**
 
   * 描述：描述的是到对端数据库的JDBC连接信息，jdbcUrl按照RDBMS官方规范，并可以填写连接附件控制信息。请注意不同的数据库jdbc的格式是不同的，DataX会根据具体jdbc的格式选择合适的数据库驱动完成数据读取。
-        - 达梦 jdbc:dm://ip:port/database
-        - db2格式 jdbc:db2://ip:port/database
-        - PPAS格式 jdbc:edb://ip:port/database
   
-      **rdbmswriter如何增加新的数据库支持:**  
+	- 达梦 jdbc:dm://ip:port/database
+	- db2格式 jdbc:db2://ip:port/database
+	- PPAS格式 jdbc:edb://ip:port/database
   
-        - 进入rdbmswriter对应目录，这里${DATAX_HOME}为DataX主目录，即: ${DATAX_HOME}/plugin/writer/rdbmswriter
-        - 在rdbmswriter插件目录下有plugin.json配置文件，在此文件中注册您具体的数据库驱动，具体放在drivers数组中。rdbmswriter插件在任务执行时会动态选择合适的数据库驱动连接数据库。
+	**rdbmswriter如何增加新的数据库支持:**  
+	
+	- 进入rdbmswriter对应目录，这里${DATAX_HOME}为DataX主目录，即: ${DATAX_HOME}/plugin/writer/rdbmswriter
+	- 在rdbmswriter插件目录下有plugin.json配置文件，在此文件中注册您具体的数据库驱动，具体放在drivers数组中。rdbmswriter插件在任务执行时会动态选择合适的数据库驱动连接数据库。
+   
+	```json
+	{
+	    "name": "rdbmswriter",
+	    "class": "com.alibaba.datax.plugin.reader.rdbmswriter.RdbmsWriter",
+	    "description": "useScene: prod. mechanism: Jdbc connection using the database, execute select sql, retrieve data from the ResultSet. warn: The more you know about the database, the less problems you encounter.",
+	    "developer": "alibaba",
+	    "drivers": [
+	        "dm.jdbc.driver.DmDriver",
+	        "com.ibm.db2.jcc.DB2Driver",
+	        "com.sybase.jdbc3.jdbc.SybDriver",
+	        "com.edb.Driver"
+	    ]
+	}
+	```
+		- 在rdbmswriter插件目录下有libs子目录，您需要将您具体的数据库驱动放到libs目录下。
         
-        ```
-        {
-    "name": "rdbmswriter",
-    "class": "com.alibaba.datax.plugin.reader.rdbmswriter.RdbmsWriter",
-    "description": "useScene: prod. mechanism: Jdbc connection using the database, execute select sql, retrieve data from the ResultSet. warn: The more you know about the database, the less problems you encounter.",
-    "developer": "alibaba",
-    "drivers": [
-        "dm.jdbc.driver.DmDriver",
-        "com.ibm.db2.jcc.DB2Driver",
-        "com.sybase.jdbc3.jdbc.SybDriver",
-        "com.edb.Driver"
-    ]
-}
-        ```
-        
-        - 在rdbmswriter插件目录下有libs子目录，您需要将您具体的数据库驱动放到libs目录下。
-        
-        ```
-        $tree
-.
-|-- libs
-|   |-- Dm7JdbcDriver16.jar
-|   |-- commons-collections-3.0.jar
-|   |-- commons-io-2.4.jar
-|   |-- commons-lang3-3.3.2.jar
-|   |-- commons-math3-3.1.1.jar
-|   |-- datax-common-0.0.1-SNAPSHOT.jar
-|   |-- datax-service-face-1.0.23-20160120.024328-1.jar
-|   |-- db2jcc4.jar
-|   |-- druid-1.0.15.jar
-|   |-- edb-jdbc16.jar
-|   |-- fastjson-1.1.46.sec01.jar
-|   |-- guava-r05.jar
-|   |-- hamcrest-core-1.3.jar
-|   |-- jconn3-1.0.0-SNAPSHOT.jar
-|   |-- logback-classic-1.0.13.jar
-|   |-- logback-core-1.0.13.jar
-|   |-- plugin-rdbms-util-0.0.1-SNAPSHOT.jar
-|   `-- slf4j-api-1.7.10.jar
-|-- plugin.json
-|-- plugin_job_template.json
-`-- rdbmswriter-0.0.1-SNAPSHOT.jar
-        ```
-  
+	```
+	$tree
+	.
+	|-- libs
+	|   |-- Dm7JdbcDriver16.jar
+	|   |-- commons-collections-3.0.jar
+	|   |-- commons-io-2.4.jar
+	|   |-- commons-lang3-3.3.2.jar
+	|   |-- commons-math3-3.1.1.jar
+	|   |-- datax-common-0.0.1-SNAPSHOT.jar
+	|   |-- datax-service-face-1.0.23-20160120.024328-1.jar
+	|   |-- db2jcc4.jar
+	|   |-- druid-1.0.15.jar
+	|   |-- edb-jdbc16.jar
+	|   |-- fastjson-1.1.46.sec01.jar
+	|   |-- guava-r05.jar
+	|   |-- hamcrest-core-1.3.jar
+	|   |-- jconn3-1.0.0-SNAPSHOT.jar
+	|   |-- logback-classic-1.0.13.jar
+	|   |-- logback-core-1.0.13.jar
+	|   |-- plugin-rdbms-util-0.0.1-SNAPSHOT.jar
+	|   `-- slf4j-api-1.7.10.jar
+	|-- plugin.json
+	|-- plugin_job_template.json
+	`-- rdbmswriter-0.0.1-SNAPSHOT.jar
+	```
   
   * 必选：是 <br />
   
