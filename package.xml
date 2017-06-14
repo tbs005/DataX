@@ -96,13 +96,13 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
-        <fileSet>
-            <directory>otsreader-internal/target/datax/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>datax</outputDirectory>
-        </fileSet>
+		<fileSet>
+             <directory>otsstreamreader/target/datax/</directory>
+             <includes>
+                 <include>**/*.*</include>
+             </includes>
+             <outputDirectory>datax</outputDirectory>
+         </fileSet>
         <fileSet>
             <directory>txtfilereader/target/datax/</directory>
             <includes>
@@ -233,13 +233,6 @@
         </fileSet>
         <fileSet>
             <directory>otswriter/target/datax/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>datax</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>otswriter-internal/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
