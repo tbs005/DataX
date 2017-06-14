@@ -66,7 +66,7 @@ DataX目前已经有了比较全面的插件体系，主流的RDBMS数据库、N
 
 # License
 
-This software is free to use under the GPL license.
+This software is free to use under the [GPL license](http://www.gnu.org/licenses/gpl.html).
 
 # 
 请及时提出issue给我们。请前往：[DataxIssue](https://github.com/alibaba/DataX/issues)
