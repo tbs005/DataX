@@ -36,7 +36,13 @@
 			<artifactId>guava</artifactId>
             <version>16.0.1</version>
 		</dependency>
-
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.52</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/src/main/libs/bcprov-jdk15on-1.52.jar</systemPath>
+        </dependency>
 		<dependency>
 			<groupId>com.aliyun.odps</groupId>
 			<artifactId>odps-sdk-core</artifactId>
