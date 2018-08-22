@@ -1,0 +1,10 @@
+{
+  "name": "hbasewriter",
+  "class": "com.alibaba.datax.plugin.writer.hbasewriter.HBaseWriter",
+  "description": {
+    "useScene": "prod.",
+    "mechanism": "TODO",
+    "warn": "TODO"
+  },
+  "developer": "alibaba"
+}
