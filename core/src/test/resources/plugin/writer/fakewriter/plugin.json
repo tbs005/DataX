@@ -1,0 +1,10 @@
+{
+    "name": "fakewriter",
+    "class": "com.alibaba.datax.core.faker.FakeWriter",
+    "description": {
+        "useScene": "only for performance test.",
+        "mechanism": "Produce Record from memory.",
+        "warn": "Never use it in your real job."
+    },
+    "developer": "someBody,bug reported to : someBody@someSite"
+}
